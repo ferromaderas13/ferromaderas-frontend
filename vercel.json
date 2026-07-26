@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://REEMPLAZA_CON_TU_URL_PUBLICA_DE_RAILWAY/api/:path*"
+      "destination": "https://ferromaderas-api-qa.up.railway.app/api/:path*"
     }
   ],
   "headers": [

@@ -4,7 +4,7 @@
  */
 export const environment = {
   production: true,
-  /** ID del contenedor GTM para producción. Reemplazar GTM-XXXXXX por tu ID real. */
+  /** Contenedor GTM de producción (otro contenedor cuando exista dominio prod). */
   gtmId: 'GTM-XXXXXX',
   /**
    * Ruta relativa: en Vercel configurá rewrite `/api/*` → tu URL de Railway (`vercel.json`).

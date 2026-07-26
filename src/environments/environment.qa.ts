@@ -4,8 +4,8 @@
  */
 export const environment = {
   production: false,
-  /** ID del contenedor GTM para pruebas. Reemplazar GTM-YYYYYY por tu ID real. */
-  gtmId: 'GTM-YYYYYY',
+  /** Contenedor GTM QA (FerroMaderas Web QA → GA4 G-2H58LRM0SD). */
+  gtmId: 'GTM-PX6XXWD6',
   /** Igual que desarrollo/producción: proxy o rewrite hacia el API */
   apiUrl: '/api',
 };

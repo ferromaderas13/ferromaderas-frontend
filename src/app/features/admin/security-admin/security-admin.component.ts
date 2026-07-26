@@ -48,6 +48,10 @@ export class SecurityAdminComponent implements OnInit {
     });
   }
 
+  roleLabel(slug: string, fallback?: string): string {
+    return this.roleLabels[slug] || fallback || slug;
+  }
+
   estadoLabel(estado: SecurityControl['estado']): string {
     const map: Record<SecurityControl['estado'], string> = {
       activo: 'Implementado',

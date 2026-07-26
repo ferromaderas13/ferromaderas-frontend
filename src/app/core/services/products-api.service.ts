@@ -106,6 +106,7 @@ export class ProductsApiService {
         code: '',
         name: '',
         price: 0,
+        promotionalPrice: null,
         imageUrl: '',
         categoryId: '',
         featured: false,
@@ -115,11 +116,24 @@ export class ProductsApiService {
       };
     }
     const o = p as Record<string, unknown>;
+    const price = Number(o['price'] ?? 0);
+    const rawPromo = o['promotionalPrice'];
+    const promotionalPrice =
+      rawPromo == null || rawPromo === ''
+        ? null
+        : Number(rawPromo);
     return {
       id: String(o['id'] ?? ''),
       code: String(o['code'] ?? ''),
       name: String(o['name'] ?? ''),
-      price: Number(o['price'] ?? 0),
+      price,
+      promotionalPrice:
+        promotionalPrice != null && Number.isFinite(promotionalPrice)
+          ? promotionalPrice
+          : null,
+      effectivePrice:
+        o['effectivePrice'] != null ? Number(o['effectivePrice']) : undefined,
+      onPromotion: Boolean(o['onPromotion']),
       imageUrl: String(o['imageUrl'] ?? ''),
       categoryId: (o['categoryId'] as string) || '',
       featured: Boolean(o['featured']),
@@ -134,6 +148,12 @@ export class ProductsApiService {
       code: p.code,
       name: p.name,
       price: p.price ?? 0,
+      promotionalPrice:
+        p.promotionalPrice === undefined
+          ? undefined
+          : p.promotionalPrice == null || Number(p.promotionalPrice) <= 0
+            ? null
+            : Number(p.promotionalPrice),
       imageUrl: p.imageUrl,
       categoryId: p.categoryId || null,
       active: p.active,

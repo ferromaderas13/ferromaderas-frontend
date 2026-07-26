@@ -28,7 +28,7 @@ export class BitacoraAdminComponent implements OnInit {
     { id: 'cotizaciones', label: 'Cotizaciones' },
     { id: 'auth', label: 'Autenticación' },
     { id: 'productos', label: 'Productos' },
-    { id: 'inventario', label: 'Inventario' },
+    { id: 'inventario_sync', label: 'Inventario (sync)' },
   ];
 
   rows: BitacoraRow[] = [];

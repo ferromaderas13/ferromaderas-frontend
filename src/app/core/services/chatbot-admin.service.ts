@@ -29,6 +29,13 @@ export interface ChatbotMetrics {
   bySource: { source: string; count: number }[];
   topQuestions: { question: string; count: number }[];
   tokens: { prompt: number; completion: number; total: number };
+  dailyAi?: {
+    usedTokens: number;
+    limitTokens: number;
+    remainingTokens: number;
+    reached: boolean;
+    enabled: boolean;
+  };
   cost: {
     model: string;
     currency: string;

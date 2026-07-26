@@ -1,6 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Product } from '../models/product.model';
 import { AnalyticsService } from './analytics.service';
+import { productEffectivePrice } from '../utils/product-price';
 
 export type CartLine = { product: Product; qty: number };
 
@@ -20,22 +21,28 @@ export class CartService {
   );
 
   addOne(product: Product): void {
+    // Congela el precio vigente (lista o promoción) en la línea del carrito.
+    const priced: Product = {
+      ...product,
+      price: productEffectivePrice(product),
+      promotionalPrice: product.promotionalPrice ?? null,
+    };
     const curr = this.lines();
-    const idx = curr.findIndex(l => l.product.id === product.id);
+    const idx = curr.findIndex((l) => l.product.id === priced.id);
     if (idx >= 0) {
       const copy = [...curr];
       copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
       this.lines.set(copy);
     } else {
-      this.lines.set([...curr, { product, qty: 1 }]);
+      this.lines.set([...curr, { product: priced, qty: 1 }]);
     }
-    this.analytics.addToCart(product.code, product.name, 1, product.price);
+    this.analytics.addToCart(priced.code, priced.name, 1, priced.price);
     this.analytics.selectItem(
-      product.code,
-      product.name,
-      product.price,
+      priced.code,
+      priced.name,
+      priced.price,
       1,
-      product.categoryId || undefined,
+      priced.categoryId || undefined,
     );
   }
 

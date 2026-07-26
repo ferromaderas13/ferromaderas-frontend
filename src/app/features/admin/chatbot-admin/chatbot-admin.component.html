@@ -2,7 +2,9 @@
   <header class="page-head">
     <h1>Chatbot</h1>
     <p class="subtitle">
-      Gestioná las preguntas del asistente, revisá métricas de uso y el consumo de IA.
+      Gestioná las preguntas del asistente (FAQs, sin costo). La IA externa (OpenAI) es
+      <strong>opcional</strong>: si no hay API key, el bot responde solo con FAQs y mensajes de respaldo.
+      El agente de recomendaciones del catálogo es propio y no usa motores de pago.
     </p>
   </header>
 
@@ -110,6 +112,21 @@
         </div>
       </div>
 
+      <div class="card" *ngIf="m.dailyAi?.enabled">
+        <h2>Límite diario de IA</h2>
+        <p class="cost" [class.limit-hit]="m.dailyAi?.reached">
+          {{ m.dailyAi?.usedTokens | number }} / {{ m.dailyAi?.limitTokens | number }} tokens hoy
+        </p>
+        <p class="note" *ngIf="m.dailyAi?.reached">
+          Tope alcanzado: el chatbot solo responde con FAQs y mensajes de respaldo hasta mañana.
+          También queda registrado en la bitácora (<code>limite_diario_ia</code>).
+        </p>
+        <p class="muted small" *ngIf="!m.dailyAi?.reached">
+          Restan ≈ {{ m.dailyAi?.remainingTokens | number }} tokens. Variable
+          <code>OPENAI_DAILY_TOKEN_LIMIT</code> en el API.
+        </p>
+      </div>
+
       <div class="card">
         <h2>Consumo de IA estimado</h2>
         <p class="cost">
@@ -138,6 +155,7 @@
                     <span *ngSwitchCase="'faq'">Pregunta prelistada (sin costo)</span>
                     <span *ngSwitchCase="'ia'">IA (OpenAI)</span>
                     <span *ngSwitchCase="'fallback'">Respaldo (sin respuesta)</span>
+                    <span *ngSwitchCase="'limite_diario'">Tope diario de IA</span>
                     <span *ngSwitchDefault>{{ s.source }}</span>
                   </span>
                 </td>

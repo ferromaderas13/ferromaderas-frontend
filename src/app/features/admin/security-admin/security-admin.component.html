@@ -27,7 +27,7 @@
         </div>
         <div class="session-item">
           <span class="label">Rol</span>
-          <strong>{{ roleLabels[data.sesion.rol] ?? data.sesion.rol }}</strong>
+          <strong>{{ roleLabel(data.sesion.rol) }}</strong>
         </div>
         <div class="session-item">
           <span class="label">Permisos activos</span>
@@ -71,7 +71,7 @@
             <tr>
               <th>Permiso</th>
               @for (role of data.matriz.roles; track role.slug) {
-                <th>{{ roleLabels[role.slug] ?? role.name }}</th>
+                <th>{{ roleLabel(role.slug, role.name) }}</th>
               }
             </tr>
           </thead>

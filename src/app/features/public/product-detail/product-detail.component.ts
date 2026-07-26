@@ -15,6 +15,10 @@ import { CartService } from '../../../core/services/cart.service';
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { Product } from '../../../core/models/product.model';
+import {
+  productEffectivePrice,
+  productIsOnPromotion,
+} from '../../../core/utils/product-price';
 import { ProductRecommendationsComponent } from '../../../shared/components/product-recommendations/product-recommendations.component';
 
 @Component({
@@ -40,6 +44,14 @@ export class ProductDetailComponent implements OnInit {
   loading = true;
   notFound = false;
   quantity = 1;
+
+  get effectivePrice(): number {
+    return this.product ? productEffectivePrice(this.product) : 0;
+  }
+
+  get onPromotion(): boolean {
+    return this.product ? productIsOnPromotion(this.product) : false;
+  }
 
   ngOnInit(): void {
     this.catalog.loadCategories().subscribe();
@@ -72,7 +84,7 @@ export class ProductDetailComponent implements OnInit {
         this.analytics.viewItem(
           product.code,
           product.name,
-          product.price,
+          productEffectivePrice(product),
           product.categoryId,
         );
         this.cdr.markForCheck();

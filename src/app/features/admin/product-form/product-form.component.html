@@ -45,10 +45,25 @@
         </select>
       </div>
       <div class="form-group">
-        <label for="productPrice">Precio (Q):</label>
+        <label for="productPrice">Precio de lista (Q):</label>
         <input type="number" id="productPrice" [(ngModel)]="productForm.price" min="0" step="0.01" placeholder="0.00" class="form-input" />
+        <p class="field-hint">Precio regular con IVA incluido.</p>
       </div>
       <div class="form-group">
+        <label for="productPromoPrice">Precio promocional (Q):</label>
+        <input
+          type="number"
+          id="productPromoPrice"
+          [(ngModel)]="productForm.promotionalPrice"
+          min="0"
+          step="0.01"
+          placeholder="Opcional"
+          class="form-input"
+        />
+        <p class="field-hint">
+          Si es menor al precio de lista, el producto aparece como oferta en el catálogo y se cotiza con este precio.
+          Dejá vacío o en 0 para quitar la promoción.
+        </p>
       </div>
       <div class="form-group">
         <label class="checkbox-label">

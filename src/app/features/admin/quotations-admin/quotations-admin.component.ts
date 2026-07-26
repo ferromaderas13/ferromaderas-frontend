@@ -391,6 +391,22 @@ export class QuotationsAdminComponent implements OnInit {
     });
   }
 
+  /**
+   * Enlace wa.me preformateado (alcance: socialización WhatsApp desde admin).
+   * Sin API Business: abre WhatsApp Web/App con mensaje listo.
+   */
+  whatsappUrl(q: Quotation | null): string | null {
+    if (!q?.telefono?.trim()) return null;
+    let digits = q.telefono.replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.length === 8) digits = `502${digits}`;
+    if (digits.length < 8) return null;
+    const text = encodeURIComponent(
+      `Hola${q.cliente ? ` ${q.cliente}` : ''}, te contactamos de Ferromaderas sobre tu cotización ${q.codigo}.`,
+    );
+    return `https://wa.me/${digits}?text=${text}`;
+  }
+
   aprobacionLabel(estado: ApprovalState): string {
     const map: Record<ApprovalState, string> = {
       no_requiere: 'Sin aprobación requerida',

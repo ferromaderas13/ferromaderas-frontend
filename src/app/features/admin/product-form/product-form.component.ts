@@ -29,6 +29,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     name: '',
     categoryId: '',
     price: 0,
+    promotionalPrice: null,
     imageUrl: '',
     featured: false,
     active: true,
@@ -240,6 +241,20 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       this.notification.showMessage('El precio debe ser mayor a 0.', 'error');
       return;
     }
+    const listPrice = Number(this.productForm.price);
+    const rawPromo = this.productForm.promotionalPrice;
+    const promoNum = Number(rawPromo);
+    const promo =
+      rawPromo == null || rawPromo === undefined || !Number.isFinite(promoNum) || promoNum <= 0
+        ? null
+        : promoNum;
+    if (promo != null && promo >= listPrice) {
+      this.notification.showMessage(
+        'El precio promocional debe ser menor al precio de lista.',
+        'error',
+      );
+      return;
+    }
     if (!this.productForm.imageUrl?.trim()) {
       this.notification.showMessage('La imagen del producto es requerida', 'error');
       return;
@@ -260,7 +275,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         code: this.productForm.code,
         name: this.productForm.name,
         categoryId: this.productForm.categoryId,
-        price: Number(this.productForm.price),
+        price: listPrice,
+        promotionalPrice: promo,
         imageUrl: this.productForm.imageUrl,
         featured: this.productForm.featured,
         active: this.productForm.active,
@@ -273,14 +289,19 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.notification.showMessage('Producto actualizado.', 'success');
           this.router.navigate(['/admin/productos']);
         },
-        error: () => this.notification.showMessage('Error al actualizar.', 'error'),
+        error: (err: { error?: { message?: string } }) =>
+          this.notification.showMessage(
+            err?.error?.message || 'Error al actualizar.',
+            'error',
+          ),
       });
     } else {
       this.catalogService.addProduct({
         code: this.productForm.code!,
         name: this.productForm.name!,
         categoryId: this.productForm.categoryId!,
-        price: Number(this.productForm.price),
+        price: listPrice,
+        promotionalPrice: promo,
         imageUrl: this.productForm.imageUrl!,
         featured: this.productForm.featured ?? false,
         active: this.productForm.active !== false,
@@ -289,7 +310,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.notification.showMessage('Producto creado.', 'success');
           this.router.navigate(['/admin/productos']);
         },
-        error: () => this.notification.showMessage('Error al crear.', 'error'),
+        error: (err: { error?: { message?: string } }) =>
+          this.notification.showMessage(
+            err?.error?.message || 'Error al crear.',
+            'error',
+          ),
       });
     }
   }

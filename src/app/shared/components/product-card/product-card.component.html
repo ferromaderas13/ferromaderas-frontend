@@ -1,5 +1,6 @@
 <div class="p-card">
   <a class="img-wrap" [routerLink]="['/producto', product.id]" (click)="openProduct()">
+    <span class="promo-badge" *ngIf="onPromotion">Oferta</span>
     <img [src]="product.imageUrl" [alt]="product.name" loading="lazy">
   </a>
 
@@ -8,7 +9,13 @@
     <a class="name name-link" [routerLink]="['/producto', product.id]" (click)="openProduct()">
       {{ product.name }}
     </a>
-    <div class="price">{{ product.price | currency:'GTQ':'symbol':'1.0-0' }}</div>
+    <div class="price-row" *ngIf="onPromotion; else regularPrice">
+      <span class="price price-promo">{{ effectivePrice | currency:'GTQ':'symbol':'1.0-0' }}</span>
+      <span class="price-list">{{ product.price | currency:'GTQ':'symbol':'1.0-0' }}</span>
+    </div>
+    <ng-template #regularPrice>
+      <div class="price">{{ product.price | currency:'GTQ':'symbol':'1.0-0' }}</div>
+    </ng-template>
     <div class="stock" *ngIf="product.stock != null && product.stock > 0">
       Disponible: {{ product.stock }}
     </div>

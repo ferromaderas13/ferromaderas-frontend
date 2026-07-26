@@ -8,12 +8,28 @@
   grid-template-rows: 180px 1fr;
 }
 .img-wrap{
+  position: relative;
   background: #f0f2ff;
   display:flex;
   align-items:center;
   justify-content:center;
   padding: 12px;
   text-decoration: none;
+}
+
+.promo-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  background: #c2410c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
 }
 img{ 
   width: 100%; 
@@ -64,6 +80,24 @@ img{
   font-weight: 800; 
   color: #0a7a2f; 
   font-size: 20px;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.price-promo {
+  color: #c2410c;
+}
+
+.price-list {
+  font-size: 0.9rem;
+  color: #64748b;
+  text-decoration: line-through;
+  font-weight: 600;
 }
 
 .quantity-controls {

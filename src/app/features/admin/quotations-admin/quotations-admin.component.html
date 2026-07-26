@@ -140,7 +140,18 @@
         </div>
         <div class="view-row">
           <span class="view-label">Teléfono</span>
-          <span class="view-value">{{ viewModalQuotation.telefono }}</span>
+          <span class="view-value">
+            {{ viewModalQuotation.telefono || '—' }}
+            <a
+              *ngIf="whatsappUrl(viewModalQuotation)"
+              class="btn-whatsapp"
+              [href]="whatsappUrl(viewModalQuotation)!"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+          </span>
         </div>
         <div class="view-row" *ngIf="viewModalQuotation.aprobacion === 'aprobada'">
           <span class="view-label">Subtotal</span>
@@ -291,9 +302,23 @@
         Este descuento espera la aprobación de un gerente.
       </div>
 
-      <!-- Socialización por correo -->
+      <!-- Socialización: WhatsApp + correo -->
       <div class="assign-section">
-        <h4 class="assign-title">Enviar cotización por correo</h4>
+        <h4 class="assign-title">Contactar / socializar cotización</h4>
+        <div class="assign-row social-actions">
+          <a
+            *ngIf="whatsappUrl(viewModalQuotation) as wa"
+            class="btn btn-whatsapp"
+            [href]="wa"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir WhatsApp
+          </a>
+          <span *ngIf="!whatsappUrl(viewModalQuotation)" class="discount-hint">
+            Sin teléfono válido para WhatsApp.
+          </span>
+        </div>
         <div class="assign-row">
           <input
             type="email"
@@ -303,7 +328,7 @@
             aria-label="Correo del cliente"
           />
           <button type="button" class="btn btn-assign" (click)="sendByEmail()" [disabled]="sendingEmail || !emailToSend">
-            {{ sendingEmail ? 'Enviando…' : 'Enviar' }}
+            {{ sendingEmail ? 'Enviando…' : 'Enviar correo' }}
           </button>
         </div>
       </div>

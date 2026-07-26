@@ -85,11 +85,22 @@ export class RecommendationAgentService {
   }
 
   private mapProduct(p: Record<string, unknown>): Product {
+    const price = Number(p['price'] ?? 0);
+    const rawPromo = p['promotionalPrice'] ?? p['promotional_price'];
+    const promotionalPrice =
+      rawPromo == null || rawPromo === '' ? null : Number(rawPromo);
     return {
       id: String(p['id'] ?? ''),
       code: String(p['code'] ?? ''),
       name: String(p['name'] ?? ''),
-      price: Number(p['price'] ?? 0),
+      price,
+      promotionalPrice:
+        promotionalPrice != null && Number.isFinite(promotionalPrice)
+          ? promotionalPrice
+          : null,
+      effectivePrice:
+        p['effectivePrice'] != null ? Number(p['effectivePrice']) : undefined,
+      onPromotion: Boolean(p['onPromotion']),
       imageUrl: String(p['imageUrl'] ?? p['image_url'] ?? '/assets/icons/logo.png'),
       categoryId: String(p['categoryId'] ?? p['category_id'] ?? ''),
       featured: Boolean(p['featured']),

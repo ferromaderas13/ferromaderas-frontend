@@ -4,8 +4,8 @@
  */
 export const environment = {
   production: false,
-  /** Contenedor GTM QA (FerroMaderas Web QA → GA4 G-2H58LRM0SD). */
-  gtmId: 'GTM-PX6XXWD6',
+  /** Contenedor GTM QA (workspace "test" → GA4 G-2H58LRM0SD). */
+  gtmId: 'GTM-5S8865HP',
   /** Igual que desarrollo/producción: proxy o rewrite hacia el API */
   apiUrl: '/api',
 };

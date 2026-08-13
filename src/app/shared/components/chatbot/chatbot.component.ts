@@ -49,7 +49,7 @@ export class ChatbotComponent implements OnInit {
         : this.chatbot.initialOptions.map((o) => ({
             id: o.id,
             question: o.text,
-            answer: '',
+            answer: o.response ?? '',
           }));
       // Refrescar las sugerencias del mensaje de bienvenida (salvo si estamos pidiendo el nombre).
       if (!this.askingName && this.messages.length && this.messages[0].type === 'bot') {
@@ -109,9 +109,14 @@ export class ChatbotComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  /** Clic en una pregunta prelistada: se envía como mensaje normal. */
+  /** Clic en una pregunta prelistada: usa la FAQ local si hay respuesta. */
   selectFaq(faq: ChatFaq): void {
     this.chatbot.recordClick(faq.id, faq.question);
+    const local = this.findLocalAnswer(faq.question, faq.id) || faq.answer?.trim();
+    if (local) {
+      this.replyLocal(faq.question, faq.id, local);
+      return;
+    }
     this.send(faq.question, faq.id);
   }
 
@@ -125,6 +130,12 @@ export class ChatbotComponent implements OnInit {
 
   private send(text: string, questionId = 'custom'): void {
     if (this.loading) return;
+    const local = this.findLocalAnswer(text, questionId);
+    if (local) {
+      this.replyLocal(text, questionId, local);
+      return;
+    }
+
     this.analytics.chatbotQuestion(questionId, text);
     this.messages.push({ type: 'user', text });
     this.loading = true;
@@ -152,11 +163,46 @@ export class ChatbotComponent implements OnInit {
         error: () => {
           this.messages.push({
             type: 'bot',
-            text: 'Ocurrió un problema al responder. Intentá de nuevo en un momento o escribinos por WhatsApp.',
+            text: 'No pude consultar el servidor ahora. Elegí una pregunta de la lista o escribinos por WhatsApp.',
             suggestions: this.faqs.slice(0, 6),
           });
           this.cdr.detectChanges();
         },
       });
+  }
+
+  private replyLocal(userText: string, questionId: string, answer: string): void {
+    this.analytics.chatbotQuestion(questionId, userText);
+    this.messages.push({ type: 'user', text: userText });
+    this.messages.push({
+      type: 'bot',
+      text: answer,
+      suggestions: this.faqs.slice(0, 6),
+    });
+    this.cdr.detectChanges();
+  }
+
+  private findLocalAnswer(text: string, questionId?: string): string | null {
+    const norm = this.normalize(text);
+    const fromFaqs = this.faqs.find(
+      (f) =>
+        (questionId && f.id === questionId && f.answer?.trim()) ||
+        this.normalize(f.question) === norm,
+    );
+    if (fromFaqs?.answer?.trim()) return fromFaqs.answer.trim();
+
+    const fromOptions = this.chatbot.initialOptions.find(
+      (o) => o.id === questionId || this.normalize(o.text) === norm,
+    );
+    return fromOptions?.response?.trim() || null;
+  }
+
+  private normalize(value: string): string {
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[¿?¡!]/g, '')
+      .trim();
   }
 }

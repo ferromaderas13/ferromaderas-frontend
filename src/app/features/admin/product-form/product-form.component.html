@@ -93,7 +93,7 @@
             <img src="/assets/icons/Agregar.png" alt="Subir" class="upload-icon" />
             Selecciona una imagen dentro del equipo
           </label>
-          <p class="file-hint">Formatos permitidos: .png, .jpg, .jpeg</p>
+          <p class="file-hint">Formatos: .png, .jpg, .jpeg · Máx. 5 MB · Se guarda en Supabase Storage</p>
         </div>
       </div>
     </div>
@@ -134,7 +134,9 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" (click)="saveProduct()" class="btn btn-save">Guardar</button>
+      <button type="button" (click)="saveProduct()" class="btn btn-save" [disabled]="saving">
+        {{ saving ? 'Subiendo imagen…' : 'Guardar' }}
+      </button>
       <button type="button" (click)="backToList()" class="btn btn-cancel">Cancelar</button>
     </div>
   </div>

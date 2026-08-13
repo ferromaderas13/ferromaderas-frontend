@@ -43,12 +43,41 @@ export class ChatbotService {
    * Opciones locales de respaldo: se usan solo si el backend no devuelve FAQs
    * (por ejemplo, sin conexión). Lo normal es cargar las FAQs desde la API.
    */
+  /**
+   * Opciones locales de respaldo: se usan si el backend no responde.
+   * Incluyen respuesta para que el chat funcione aunque falle POST /chatbot/message.
+   */
   readonly initialOptions: ChatOption[] = [
-    { id: 'ubicacion', text: '¿Cuál es la ubicación?' },
-    { id: 'horarios', text: '¿Cuáles son los horarios?' },
-    { id: 'envios', text: '¿Hacen envíos a domicilio?' },
-    { id: 'pago', text: '¿Qué métodos de pago aceptan?' },
-    { id: 'cotizacion', text: '¿Cómo obtengo una cotización?' },
+    {
+      id: 'ubicacion',
+      text: '¿Cuál es la ubicación?',
+      response:
+        'Estamos en Amatitlán, Guatemala. En el sitio podés ver el mapa y la dirección en la sección Ubicación.',
+    },
+    {
+      id: 'horarios',
+      text: '¿Cuáles son los horarios?',
+      response:
+        'Atendemos en horario comercial de ferretería. Para confirmar el horario del día, escribinos por WhatsApp desde el sitio o visitá la sección Ubicación.',
+    },
+    {
+      id: 'envios',
+      text: '¿Hacen envíos a domicilio?',
+      response:
+        'Sí, hacemos envíos. El flete se confirma con un vendedor según zona, tipo de material y cantidad. Armá tu cotización en el carrito y enviala por WhatsApp.',
+    },
+    {
+      id: 'pago',
+      text: '¿Qué métodos de pago aceptan?',
+      response:
+        'El cierre de la compra lo confirma un vendedor. El pago se gestiona en tienda (efectivo u otros medios que indique el personal). La plataforma no cobra en línea.',
+    },
+    {
+      id: 'cotizacion',
+      text: '¿Cómo obtengo una cotización?',
+      response:
+        'Agregá productos al carrito, completá tus datos y generá la cotización. Podés copiar el enlace o enviarla por WhatsApp para seguimiento.',
+    },
   ];
 
   // ---------------------------------------------------------------------------

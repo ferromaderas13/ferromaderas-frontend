@@ -277,10 +277,12 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.selectedFile = null;
           this.persistProduct(res.url, listPrice, promo);
         },
-        error: (err: { error?: { message?: string } }) => {
+        error: (err: { error?: { message?: string | string[] } }) => {
           this.saving = false;
+          const raw = err?.error?.message;
+          const msg = Array.isArray(raw) ? raw.join(' ') : raw;
           this.notification.showMessage(
-            err?.error?.message || 'No se pudo subir la imagen a Storage.',
+            msg || 'No se pudo subir la imagen a Storage. Revisá que Railway llegue a Supabase.',
             'error',
           );
         },

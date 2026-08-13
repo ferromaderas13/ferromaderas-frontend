@@ -378,16 +378,30 @@ export class CartComponent implements OnInit {
   sendToWhatsApp(): void {
     this.ensureQuoteSaved().subscribe((q) => {
       if (!q) return;
-      const msg = this.buildWhatsAppMessage(q);
-      const encoded = encodeURIComponent(msg);
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`, '_blank');
+      const full = this.buildWhatsAppMessage(q);
+      const { url: quoteUrl } = this.quoteLinkFor(q);
+      const short = `Buen día, Ferromaderas. Cotización ${q.codigo}. Ver: ${quoteUrl}`;
+      const fullLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(full)}`;
+      const waUrl =
+        fullLink.length > 1800
+          ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(short)}`
+          : fullLink;
+      const popup = window.open(waUrl, '_blank', 'noopener,noreferrer');
       const emailNote = this.trackingData.email?.trim()
         ? ' También enviamos una copia a tu correo.'
         : '';
-      this.notification.showMessage(
-        `Cotización ${q.codigo} registrada.${emailNote} Se abrió WhatsApp.`,
-        'success',
-      );
+      if (!popup) {
+        void navigator.clipboard.writeText(full);
+        this.notification.showMessage(
+          `Cotización ${q.codigo} registrada.${emailNote} El navegador bloqueó WhatsApp; copiamos el mensaje para que lo pegues.`,
+          'success',
+        );
+      } else {
+        this.notification.showMessage(
+          `Cotización ${q.codigo} registrada.${emailNote} Se abrió WhatsApp.`,
+          'success',
+        );
+      }
       this.analytics.generateLead(q.codigo, this.cart.total(), 'whatsapp');
       if (this.trackingData.email?.trim()) {
         this.analytics.generateLead(q.codigo, this.cart.total(), 'email');

@@ -198,8 +198,12 @@ export class CatalogService {
   }
 
   deleteProduct(id: string): Observable<boolean> {
-    return this.setProductActive(id, false).pipe(
-      map((p) => p !== null)
+    return this.productsApi.delete(id).pipe(
+      tap(() => {
+        this.products = this.products.filter((x) => x.id !== id);
+      }),
+      map(() => true),
+      catchError(() => of(false)),
     );
   }
 

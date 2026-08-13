@@ -188,6 +188,25 @@ export class ProductsAdminComponent implements OnInit {
     });
   }
 
+  deleteProduct(product: Product): void {
+    this.notification
+      .confirm('Eliminar producto', `¿Borrar "${product.name}" (${product.code})? Esta acción no se deshace.`)
+      .then((ok) => {
+        if (!ok) return;
+        this.catalogService.deleteProduct(product.id).subscribe({
+          next: (done) => {
+            if (!done) {
+              this.notification.showMessage('No se pudo eliminar el producto.', 'error');
+              return;
+            }
+            this.loadProducts();
+            this.notification.showMessage(`Producto "${product.name}" eliminado.`, 'success');
+          },
+          error: () => this.notification.showMessage('No se pudo eliminar el producto.', 'error'),
+        });
+      });
+  }
+
   trackById(_index: number, product: Product): string {
     return product.id;
   }

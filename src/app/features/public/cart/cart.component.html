@@ -29,14 +29,14 @@
               <img [src]="line.product.imageUrl || '/assets/icons/logo.png'" [alt]="line.product.name" class="product-thumb" />
               <span>{{ line.product.name }}</span>
             </td>
-            <td class="col-price" data-label="Precio">Q{{ line.product.price }}</td>
+            <td class="col-price" data-label="Precio">Q{{ line.product.price | number:'1.2-2' }}</td>
             <td class="col-qty" data-label="Cantidad">{{ line.qty }}</td>
-            <td class="col-subtotal" data-label="Subtotal">Q{{ line.product.price * line.qty }}</td>
+            <td class="col-subtotal" data-label="Subtotal">Q{{ line.product.price * line.qty | number:'1.2-2' }}</td>
           </tr>
         </tbody>
       </table>
       <div class="quote-total">
-        <div class="quote-total-final">Total: Q{{ qd.totalConIva | number:'1.0-0' }}</div>
+        <div class="quote-total-final">Total: Q{{ qd.totalConIva | number:'1.2-2' }}</div>
       </div>
       <div class="quote-client" *ngIf="qd.nombre || qd.telefono || qd.direccion || qd.nota">
         <h3>Datos del cliente</h3>
@@ -58,7 +58,7 @@
     <a routerLink="/catalogo" class="btn btn-primary">Ver productos</a>
   </section>
 
-  <section class="cart-header card" *ngIf="!showQuoteView() && !loadingQuote() && !quoteCodeFromUrl()">
+  <section class="cart-header card" *ngIf="!showQuoteView() && !loadingQuote() && !showTrackingForm">
     <div class="cart-title-wrap">
       <img src="/assets/icons/Carrito-compras.png" alt="Carrito" class="cart-icon" />
       <h1 class="cart-title">Mi carrito</h1>
@@ -69,7 +69,7 @@
     </p>
   </section>
 
-  <ng-container *ngIf="!showQuoteView() && !loadingQuote() && !quoteCodeFromUrl() && !showTrackingForm; else trackingForm">
+  <ng-container *ngIf="!showQuoteView() && !loadingQuote() && !showTrackingForm; else trackingForm">
     <section class="cart-table-section card" *ngIf="!isEmpty()">
       <table class="cart-table">
         <thead>
@@ -89,13 +89,13 @@
               <img [src]="line.product.imageUrl || '/assets/icons/logo.png'" [alt]="line.product.name" class="product-thumb" />
               <span>{{ line.product.name }}</span>
             </td>
-            <td class="col-price" data-label="Precio">Q{{ line.product.price }}</td>
+            <td class="col-price" data-label="Precio">Q{{ line.product.price | number:'1.2-2' }}</td>
             <td class="col-qty" data-label="Cantidad">
               <button type="button" class="qty-btn" (click)="subtractQty(line.product.id)" aria-label="Menos">−</button>
               <span class="qty-value">{{ line.qty }}</span>
               <button type="button" class="qty-btn" (click)="addQty(line.product.id)" aria-label="Más">+</button>
             </td>
-            <td class="col-subtotal" data-label="Subtotal">Q{{ line.product.price * line.qty }}</td>
+            <td class="col-subtotal" data-label="Subtotal">Q{{ line.product.price * line.qty | number:'1.2-2' }}</td>
             <td class="col-action" data-label="Acción">
               <button type="button" class="btn-remove" (click)="remove(line.product.id)" title="Quitar del carrito" aria-label="Quitar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -112,7 +112,7 @@
       <div class="cart-footer">
         <div class="total-row">
           <span class="total-label">Total:</span>
-          <span class="total-value">Q{{ total() | number:'1.0-0' }}</span>
+          <span class="total-value">Q{{ total() | number:'1.2-2' }}</span>
         </div>
         <div class="cart-actions">
           <button type="button" class="btn btn-secondary" (click)="copyLink()">
@@ -137,7 +137,7 @@
   </ng-container>
 
   <ng-template #trackingForm>
-    <section class="tracking-section card" *ngIf="!showQuoteView">
+    <section class="tracking-section card" *ngIf="!showQuoteView()">
       <div class="tracking-header">Datos para seguimiento</div>
       <p class="tracking-desc">
         ¡Ayudanos con estos datos para darte el mejor seguimiento!

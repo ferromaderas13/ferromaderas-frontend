@@ -239,7 +239,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       this.notification.showMessage('El precio debe ser mayor a 0.', 'error');
       return;
     }
-    const listPrice = Number(this.productForm.price);
+    const listPrice = Math.round((Number(this.productForm.price) + Number.EPSILON) * 100) / 100;
     const rawPromo = this.productForm.promotionalPrice;
     const promoNum = Number(rawPromo);
     const promo =

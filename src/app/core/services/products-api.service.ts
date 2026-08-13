@@ -89,6 +89,10 @@ export class ProductsApiService {
       .pipe(map((p) => this.mapToProduct(p)));
   }
 
+  delete(id: string): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(`${this.api}/${id}`);
+  }
+
   bulkImport(
     items: { code: string; name: string; stock?: number }[],
     sync: boolean
@@ -116,7 +120,7 @@ export class ProductsApiService {
       };
     }
     const o = p as Record<string, unknown>;
-    const price = Number(o['price'] ?? 0);
+    const price = Math.round((Number(o['price'] ?? 0) + Number.EPSILON) * 100) / 100;
     const rawPromo = o['promotionalPrice'];
     const promotionalPrice =
       rawPromo == null || rawPromo === ''

@@ -1,14 +1,38 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { Product } from '../models/product.model';
 import { AnalyticsService } from './analytics.service';
 import { productEffectivePrice } from '../utils/product-price';
 
 export type CartLine = { product: Product; qty: number };
 
+const CART_STORAGE_KEY = 'fm_cart_v1';
+
+function roundMoney(n: number): number {
+  return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+}
+
+function readStoredCart(): CartLine[] {
+  try {
+    const raw = sessionStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (l): l is CartLine =>
+        !!l &&
+        typeof l === 'object' &&
+        typeof (l as CartLine).qty === 'number' &&
+        !!(l as CartLine).product?.id,
+    );
+  } catch {
+    return [];
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class CartService {
   private readonly analytics = inject(AnalyticsService);
-  private readonly lines = signal<CartLine[]>([]);
+  private readonly lines = signal<CartLine[]>(readStoredCart());
 
   readonly count = computed(() =>
     this.lines().reduce((acc, l) => acc + l.qty, 0)
@@ -17,14 +41,19 @@ export class CartService {
   readonly items = computed(() => [...this.lines()]);
 
   readonly total = computed(() =>
-    this.lines().reduce((acc, l) => acc + l.product.price * l.qty, 0)
+    roundMoney(this.lines().reduce((acc, l) => acc + l.product.price * l.qty, 0))
   );
 
+  constructor() {
+    effect(() => {
+      sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(this.lines()));
+    });
+  }
+
   addOne(product: Product): void {
-    // Congela el precio vigente (lista o promoción) en la línea del carrito.
     const priced: Product = {
       ...product,
-      price: productEffectivePrice(product),
+      price: roundMoney(productEffectivePrice(product)),
       promotionalPrice: product.promotionalPrice ?? null,
     };
     const curr = this.lines();

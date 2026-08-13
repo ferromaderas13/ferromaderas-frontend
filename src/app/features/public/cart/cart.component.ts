@@ -315,7 +315,10 @@ export class CartComponent implements OnInit {
     if (this.savedQuote) return of(this.savedQuote);
     if (this.cart.items().length === 0) return of(null);
     return this.quotesApi.create(this.buildCreateInput()).pipe(
-      tap((q) => (this.savedQuote = q)),
+      tap((q) => {
+        this.savedQuote = q;
+        this.analytics.generateQuote(q.codigo, this.cart.total(), this.cart.items().length);
+      }),
       catchError((err) => {
         const msg =
           err?.error?.message ??

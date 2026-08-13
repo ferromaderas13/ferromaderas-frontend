@@ -24,6 +24,8 @@ import {
 
 import { CartService } from '../../../core/services/cart.service';
 
+import { AnalyticsService } from '../../../core/services/analytics.service';
+
 import { ProductCardComponent } from '../product-card/product-card.component';
 
 
@@ -49,6 +51,8 @@ export class ProductRecommendationsComponent implements OnInit, OnChanges {
   private readonly agent = inject(RecommendationAgentService);
 
   private readonly cart = inject(CartService);
+
+  private readonly analytics = inject(AnalyticsService);
 
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -150,6 +154,13 @@ export class ProductRecommendationsComponent implements OnInit, OnChanges {
 
           this.loading = false;
 
+          if (this.recommendations.length) {
+            this.analytics.viewRecommendations(
+              this.recommendations.length,
+              this.title || 'recommendations',
+            );
+          }
+
           this.cdr.markForCheck();
 
         },
@@ -171,9 +182,14 @@ export class ProductRecommendationsComponent implements OnInit, OnChanges {
 
 
   onAdd(item: RecommendationItem['product']): void {
-
+    const rec = this.recommendations.find((r) => r.product.id === item.id);
+    this.analytics.selectRecommendation(
+      item.code,
+      item.name,
+      rec?.tipo ?? 'relacionado',
+      item.price,
+    );
     this.cart.addOne(item);
-
   }
 
 

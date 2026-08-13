@@ -102,20 +102,61 @@ npm run serve:qa
 4. Disparador: **All Pages**
 5. Guardar y publicar
 
-### 5. Eventos personalizados útiles
+### 5. Eventos de valor (ya se envían desde Angular)
 
-Para el sitio Ferromaderas, conviene enviar estos eventos:
+El código hace `dataLayer.push` en las acciones comerciales. **GTM debe reenviarlos a GA4** o no aparecerán como eventos propios.
 
-| Evento        | Cuándo                        | Datos útiles                          |
-|---------------|-------------------------------|----------------------------------------|
-| `page_view`   | Cada vista de página          | Ruta, título                           |
-| `select_item` | Agregar al carrito            | `item_id`, nombre, precio, categoría  |
-| `begin_checkout` | Ir al carrito              | Lista de productos, total              |
-| `generate_lead` | Generar cotización          | Origen (WhatsApp / compartir)         |
-| `chatbot_open`| Abrir el chatbot              | -                                      |
-| `chatbot_question` | Hacer una pregunta       | `question_id`, texto                  |
+| Evento | Cuándo | Indicador del PG |
+|--------|--------|------------------|
+| `page_view` | Cada página | Presencia digital / consultas |
+| `search` | Búsqueda en catálogo | Facilidad de consulta |
+| `view_item` | Ficha de producto | Productos más consultados |
+| `select_item` / `add_to_cart` | Elegir o agregar producto | Interés comercial |
+| `view_item_list` | Se muestran recomendaciones | Agente de recomendación |
+| `select_recommendation` | Agregar un producto sugerido | Venta cruzada |
+| `begin_checkout` | Abrir formulario de cotización | Embudo de cotización |
+| `generate_lead` | Cotización **guardada** | Cantidad de cotizaciones + tiempo (`quote_duration_seconds`) |
+| `share_quote` | WhatsApp / correo / copiar enlace | Socialización |
+| `chatbot_open` / `chatbot_question` | Abrir o preguntar al asistente | Asistente conversacional |
 
-Puedes dispararlos con reglas de GTM (clics, formularios, variables personalizadas) o desde el código con `dataLayer.push`.
+### 6. Cómo verlos en GA4 (paso obligatorio en GTM)
+
+Hoy solo llega `page_view` / `session_start` porque la etiqueta Google Tag mide páginas. Los eventos de cotización **no se ven** hasta crear tags GA4 Event.
+
+En GTM (contenedor QA `GTM-5S8865HP`):
+
+1. **Variables** → Configurar → activá `Event` (nombre del evento).
+2. **Disparador** → Nuevo → tipo **Evento personalizado**
+   - Nombre del evento: `generate_lead` (repetí para cada evento de la tabla).
+3. **Etiqueta** → Nueva → **Google Analytics: evento de GA4**
+   - ID de medición: `G-2H58LRM0SD`
+   - Nombre del evento: igual al del dataLayer (`generate_lead`, `add_to_cart`, etc.)
+   - Disparador: el evento personalizado del paso 2.
+4. **Enviar → Publicar**.
+
+Atajo: un solo disparador con regex:
+
+```
+generate_lead|share_quote|add_to_cart|begin_checkout|view_item|select_item|search|chatbot_open|chatbot_question|view_item_list|select_recommendation
+```
+
+y una etiqueta GA4 Event con nombre de evento `{{Event}}`.
+
+### 7. Marcar conversiones en GA4
+
+1. GA4 → **Administrar → Eventos**.
+2. Cuando aparezca `generate_lead`, marcalo como **evento clave** (conversión).
+3. Opcional: `share_quote` y `chatbot_open` también como eventos clave.
+
+Luego en **Informes → Engagement → Eventos** y **Tiempo real** verás cotizaciones, carrito y chatbot.
+
+### 8. Dónde está cada tablero
+
+| Pregunta de valor | Dónde se ve |
+|-------------------|-------------|
+| ¿Cuánta gente entra y desde qué dispositivo? | Admin → **Inicio** (GA4) y GA4 Tiempo real |
+| ¿Cuántas cotizaciones, estados, conversión, vendedores, productos cotizados, chatbot FAQ? | Admin → **Reportes** (datos del negocio, no de GTM) |
+| ¿Cuánto tardan en cotizar? ¿Usan recomendaciones? ¿WhatsApp? | GA4 eventos (`quote_duration_seconds`, `select_recommendation`, `share_quote`) |
 
 ---
 

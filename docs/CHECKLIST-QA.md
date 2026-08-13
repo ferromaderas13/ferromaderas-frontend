@@ -17,9 +17,10 @@ El front en Vercel reescribe `/api/*` hacia la API de Railway QA. Si el catálog
 
 **Manuales de apoyo**
 
-- Carga masiva desde admin: este checklist, sección 4.
+- **Carga masiva a mano (admin + Excel):** `docs/MANUAL-CARGA-MASIVA.md` — este es el de subir el archivo desde Productos.
 - Sync automático (PC + Excel Dichara): `ferromaderas-inventory-sync/MANUAL-PASO-A-PASO.md`.
 - Inventario programado (API): `feromaderas-api/docs/INVENTARIO-PROGRAMADO.md`.
+- Pruebas de la carga en QA: sección 4 de este checklist.
 
 Al reportar un bug: URL exacta, usuario (sin contraseña), pasos, esperado vs obtenido, captura, y si aplica código de producto / cotización (`FM-2026-XXXX`).
 

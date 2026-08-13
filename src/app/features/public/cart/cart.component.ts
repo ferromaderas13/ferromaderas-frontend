@@ -11,9 +11,7 @@ import { QuotesApiService, Quote, CreateQuoteInput } from '../../../core/service
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProductRecommendationsComponent } from '../../../shared/components/product-recommendations/product-recommendations.component';
-
-/** Número de WhatsApp para recibir cotizaciones: +502 58226530 */
-const WHATSAPP_NUMBER = '50258226530';
+import { openWhatsAppChat } from '../../../core/constants/whatsapp';
 
 /** Payload compacto con claves mínimas (URL más corta = más fácil que WhatsApp la detecte como link). */
 type CompactLine = { p: string; q: number; c?: string; n?: string; m?: string; r?: number; pr?: number };
@@ -381,27 +379,15 @@ export class CartComponent implements OnInit {
       const full = this.buildWhatsAppMessage(q);
       const { url: quoteUrl } = this.quoteLinkFor(q);
       const short = `Buen día, Ferromaderas. Cotización ${q.codigo}. Ver: ${quoteUrl}`;
-      const fullLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(full)}`;
-      const waUrl =
-        fullLink.length > 1800
-          ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(short)}`
-          : fullLink;
-      const popup = window.open(waUrl, '_blank', 'noopener,noreferrer');
+      const message = full.length > 1600 ? short : full;
+      openWhatsAppChat(message);
       const emailNote = this.trackingData.email?.trim()
         ? ' También enviamos una copia a tu correo.'
         : '';
-      if (!popup) {
-        void navigator.clipboard.writeText(full);
-        this.notification.showMessage(
-          `Cotización ${q.codigo} registrada.${emailNote} El navegador bloqueó WhatsApp; copiamos el mensaje para que lo pegues.`,
-          'success',
-        );
-      } else {
-        this.notification.showMessage(
-          `Cotización ${q.codigo} registrada.${emailNote} Se abrió WhatsApp.`,
-          'success',
-        );
-      }
+      this.notification.showMessage(
+        `Cotización ${q.codigo} registrada.${emailNote} Se abrió WhatsApp con el mensaje listo; dale Enviar.`,
+        'success',
+      );
       this.analytics.generateLead(q.codigo, this.cart.total(), 'whatsapp');
       if (this.trackingData.email?.trim()) {
         this.analytics.generateLead(q.codigo, this.cart.total(), 'email');

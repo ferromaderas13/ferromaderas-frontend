@@ -153,6 +153,7 @@
                 <td>
                   <span [ngSwitch]="s.source">
                     <span *ngSwitchCase="'faq'">Pregunta prelistada (sin costo)</span>
+                    <span *ngSwitchCase="'catalogo'">Catálogo (sin costo)</span>
                     <span *ngSwitchCase="'ia'">IA (OpenAI)</span>
                     <span *ngSwitchCase="'fallback'">Respaldo (sin respuesta)</span>
                     <span *ngSwitchCase="'limite_diario'">Tope diario de IA</span>

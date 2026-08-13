@@ -22,7 +22,7 @@ export interface ChatFaq {
 export interface ChatResponse {
   conversationId: string;
   answer: string;
-  source: 'faq' | 'ia' | 'fallback';
+  source: 'faq' | 'catalogo' | 'ia' | 'fallback' | 'limite_diario';
   suggestions: ChatFaq[];
 }
 

@@ -1,6 +1,5 @@
 import { Component, OnInit, AfterViewChecked, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
@@ -42,19 +41,16 @@ interface PreguntaFrecuente {
 })
 export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
   @ViewChild('reportContent') reportContent!: ElementRef<HTMLElement>;
-  @ViewChild('pdfFrame') pdfFrame!: ElementRef<HTMLIFrameElement>;
 
   private quotationsService = inject(QuotationsService);
   private quotesApi = inject(QuotesApiService);
   private chatbotAdmin = inject(ChatbotAdminService);
   private route = inject(ActivatedRoute);
-  private sanitizer = inject(DomSanitizer);
 
   showPdfPreview = false;
-  pdfBlobUrl: unknown = null;
+  pdfPreviewPages: string[] = [];
   private currentPdfBlob: Blob | null = null;
   private currentPdfSectionId = '';
-  private currentBlobUrl = '';
 
   private hasScrolledToHash = false;
 
@@ -314,29 +310,27 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
   }
 
   async openPdfPreview(sectionId: string): Promise<void> {
-    const blob = await this.generatePdfBlob(sectionId);
-    if (!blob) return;
-    if (this.currentBlobUrl) URL.revokeObjectURL(this.currentBlobUrl);
-    this.currentPdfBlob = blob;
+    const result = await this.generatePdfBlob(sectionId);
+    if (!result) return;
+    this.currentPdfBlob = result.blob;
     this.currentPdfSectionId = sectionId;
-    this.currentBlobUrl = URL.createObjectURL(blob);
-    this.pdfBlobUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.currentBlobUrl);
+    this.pdfPreviewPages = result.pages;
     this.showPdfPreview = true;
   }
 
   closePdfPreview(): void {
     this.showPdfPreview = false;
-    if (this.currentBlobUrl) {
-      URL.revokeObjectURL(this.currentBlobUrl);
-      this.currentBlobUrl = '';
-    }
-    this.pdfBlobUrl = null;
+    this.pdfPreviewPages = [];
     this.currentPdfBlob = null;
   }
 
   printPdf(): void {
-    const frame = this.pdfFrame?.nativeElement;
-    if (frame?.contentWindow) frame.contentWindow.print();
+    if (!this.currentPdfBlob) return;
+    const url = URL.createObjectURL(this.currentPdfBlob);
+    const win = window.open(url, '_blank', 'noopener');
+    if (!win) {
+      this.savePdf();
+    }
   }
 
   savePdf(): void {
@@ -349,7 +343,9 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
     URL.revokeObjectURL(url);
   }
 
-  private async generatePdfBlob(sectionId: string): Promise<Blob | null> {
+  private async generatePdfBlob(
+    sectionId: string,
+  ): Promise<{ blob: Blob; pages: string[] } | null> {
     const el = document.getElementById(sectionId);
     if (!el) return null;
     const excludeEls = el.querySelectorAll('.exclude-from-pdf');
@@ -397,6 +393,7 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
       let remainingImgH = imgH;
       let srcY = 0;
       let pageNum = 1;
+      const pages: string[] = [];
 
       addHeaderFooter(1, imgH > maxImgPerPage ? Math.ceil(imgH / maxImgPerPage) : 1);
 
@@ -409,6 +406,7 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
         const ctx = tempCanvas.getContext('2d')!;
         ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
         const chunkData = tempCanvas.toDataURL('image/png');
+        pages.push(chunkData);
         doc.addImage(chunkData, 'PNG', 15, yPos, imgW, drawH);
         remainingImgH -= drawH;
         srcY += srcH;
@@ -420,7 +418,7 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
         }
       }
 
-      return doc.output('blob');
+      return { blob: doc.output('blob'), pages };
     } catch {
       return null;
     } finally {

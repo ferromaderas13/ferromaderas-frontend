@@ -198,6 +198,13 @@
         <button type="button" class="btn-close" (click)="closePdfPreview()" aria-label="Cerrar">×</button>
       </div>
     </div>
-    <iframe #pdfFrame class="pdf-preview-frame" [src]="pdfBlobUrl" *ngIf="pdfBlobUrl"></iframe>
+    <div class="pdf-preview-pages" *ngIf="pdfPreviewPages.length">
+      <img
+        *ngFor="let page of pdfPreviewPages; let i = index"
+        [src]="page"
+        [alt]="'Página ' + (i + 1) + ' del reporte'"
+        class="pdf-preview-page"
+      />
+    </div>
   </div>
 </div>

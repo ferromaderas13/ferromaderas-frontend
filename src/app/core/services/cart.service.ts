@@ -2,13 +2,17 @@ import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { Product } from '../models/product.model';
 import { AnalyticsService } from './analytics.service';
 import { productEffectivePrice } from '../utils/product-price';
+import { exactPrice, lineAmount } from '../utils/money';
 
 export type CartLine = { product: Product; qty: number };
 
 const CART_STORAGE_KEY = 'fm_cart_v1';
 
-function roundMoney(n: number): number {
-  return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+function normalizeLine(l: CartLine): CartLine {
+  return {
+    product: { ...l.product, price: exactPrice(l.product.price) },
+    qty: Math.max(1, Math.trunc(Number(l.qty) || 1)),
+  };
 }
 
 function readStoredCart(): CartLine[] {
@@ -17,13 +21,15 @@ function readStoredCart(): CartLine[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (l): l is CartLine =>
-        !!l &&
-        typeof l === 'object' &&
-        typeof (l as CartLine).qty === 'number' &&
-        !!(l as CartLine).product?.id,
-    );
+    return parsed
+      .filter(
+        (l): l is CartLine =>
+          !!l &&
+          typeof l === 'object' &&
+          typeof (l as CartLine).qty === 'number' &&
+          !!(l as CartLine).product?.id,
+      )
+      .map(normalizeLine);
   } catch {
     return [];
   }
@@ -41,8 +47,12 @@ export class CartService {
   readonly items = computed(() => [...this.lines()]);
 
   readonly total = computed(() =>
-    roundMoney(this.lines().reduce((acc, l) => acc + l.product.price * l.qty, 0))
+    this.lines().reduce((acc, l) => acc + lineAmount(l.product.price, l.qty), 0)
   );
+
+  lineSubtotal(line: CartLine): number {
+    return lineAmount(line.product.price, line.qty);
+  }
 
   constructor() {
     effect(() => {
@@ -53,7 +63,7 @@ export class CartService {
   addOne(product: Product): void {
     const priced: Product = {
       ...product,
-      price: roundMoney(productEffectivePrice(product)),
+      price: exactPrice(productEffectivePrice(product)),
       promotionalPrice: product.promotionalPrice ?? null,
     };
     const curr = this.lines();

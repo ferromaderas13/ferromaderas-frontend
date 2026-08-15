@@ -1,11 +1,12 @@
 import { Product } from '../models/product.model';
+import { exactPrice } from './money';
 
 /** Precio de venta vigente: promocional si es válido, si no el de lista. */
 export function productEffectivePrice(product: Pick<Product, 'price' | 'promotionalPrice'>): number {
-  const list = Number(product.price ?? 0);
+  const list = exactPrice(product.price ?? 0);
   const promo = product.promotionalPrice;
-  if (promo != null && Number(promo) > 0 && Number(promo) < list) {
-    return Number(promo);
+  if (promo != null && Number(promo) > 0 && exactPrice(promo) < list) {
+    return exactPrice(promo);
   }
   return list;
 }

@@ -12,6 +12,7 @@ import { AnalyticsService } from '../../../core/services/analytics.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProductRecommendationsComponent } from '../../../shared/components/product-recommendations/product-recommendations.component';
 import { openWhatsAppChat } from '../../../core/constants/whatsapp';
+import { exactPrice, formatQuetzales, lineAmount } from '../../../core/utils/money';
 
 /** Payload compacto con claves mínimas (URL más corta = más fácil que WhatsApp la detecte como link). */
 type CompactLine = { p: string; q: number; c?: string; n?: string; m?: string; r?: number; pr?: number };
@@ -189,7 +190,7 @@ export class CartComponent implements OnInit {
           id: it.productoId ?? it.codigo,
           code: it.codigo,
           name: it.nombre,
-          price: it.precioUnitario,
+          price: exactPrice(it.precioUnitario),
           imageUrl: existing?.imageUrl ?? '/assets/icons/logo.png',
           categoryId: existing?.categoryId ?? '',
         },
@@ -250,6 +251,14 @@ export class CartComponent implements OnInit {
     this.quoteData.set(null);
   }
 
+  linePrice(line: CartLine): number {
+    return exactPrice(line.product.price);
+  }
+
+  lineSubtotal(line: CartLine): number {
+    return lineAmount(line.product.price, line.qty);
+  }
+
   addQty(productId: string): void {
     this.savedQuote = null;
     this.cart.addQty(productId);
@@ -299,7 +308,7 @@ export class CartComponent implements OnInit {
         productoId: l.product.id,
         codigo: l.product.code,
         nombre: l.product.name,
-        precioUnitario: l.product.price,
+        precioUnitario: exactPrice(l.product.price),
         cantidad: l.qty,
       })),
     };
@@ -396,12 +405,9 @@ export class CartComponent implements OnInit {
     });
   }
 
-  /** Formatea un monto en quetzales con separador de miles y 2 decimales (Q1,234.50). */
+  /** Formatea un monto en quetzales exactos (Q100, no Q99.99). */
   private fmtQ(n: number): string {
-    return `Q${n.toLocaleString('es-GT', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    return formatQuetzales(n);
   }
 
   private buildWhatsAppMessage(q: Quote | null): string {
@@ -416,7 +422,7 @@ export class CartComponent implements OnInit {
 
     const productos = ['*Productos*'];
     lines.forEach((l) => {
-      const sub = l.product.price * l.qty;
+      const sub = lineAmount(l.product.price, l.qty);
       productos.push(
         `• ${l.product.code} - ${l.product.name}\n   ${l.qty} x ${this.fmtQ(l.product.price)} = ${this.fmtQ(sub)}`,
       );

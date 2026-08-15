@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Product } from '../models/product.model';
+import { exactPrice } from '../utils/money';
 
 export interface BulkImportResult {
   created: number;
@@ -120,7 +121,7 @@ export class ProductsApiService {
       };
     }
     const o = p as Record<string, unknown>;
-    const price = Math.round((Number(o['price'] ?? 0) + Number.EPSILON) * 100) / 100;
+    const price = exactPrice(Number(o['price'] ?? 0));
     const rawPromo = o['promotionalPrice'];
     const promotionalPrice =
       rawPromo == null || rawPromo === ''
@@ -133,10 +134,10 @@ export class ProductsApiService {
       price,
       promotionalPrice:
         promotionalPrice != null && Number.isFinite(promotionalPrice)
-          ? promotionalPrice
+          ? exactPrice(promotionalPrice)
           : null,
       effectivePrice:
-        o['effectivePrice'] != null ? Number(o['effectivePrice']) : undefined,
+        o['effectivePrice'] != null ? exactPrice(Number(o['effectivePrice'])) : undefined,
       onPromotion: Boolean(o['onPromotion']),
       imageUrl: String(o['imageUrl'] ?? ''),
       categoryId: (o['categoryId'] as string) || '',

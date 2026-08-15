@@ -29,14 +29,14 @@
               <img [src]="line.product.imageUrl || '/assets/icons/logo.png'" [alt]="line.product.name" class="product-thumb" />
               <span>{{ line.product.name }}</span>
             </td>
-            <td class="col-price" data-label="Precio">Q{{ line.product.price | number:'1.2-2' }}</td>
+            <td class="col-price" data-label="Precio">Q{{ linePrice(line) | number:'1.0-0' }}</td>
             <td class="col-qty" data-label="Cantidad">{{ line.qty }}</td>
-            <td class="col-subtotal" data-label="Subtotal">Q{{ line.product.price * line.qty | number:'1.2-2' }}</td>
+            <td class="col-subtotal" data-label="Subtotal">Q{{ lineSubtotal(line) | number:'1.0-0' }}</td>
           </tr>
         </tbody>
       </table>
       <div class="quote-total">
-        <div class="quote-total-final">Total: Q{{ qd.totalConIva | number:'1.2-2' }}</div>
+        <div class="quote-total-final">Total: Q{{ qd.totalConIva | number:'1.0-0' }}</div>
       </div>
       <div class="quote-client" *ngIf="qd.nombre || qd.telefono || qd.direccion || qd.nota">
         <h3>Datos del cliente</h3>
@@ -89,13 +89,13 @@
               <img [src]="line.product.imageUrl || '/assets/icons/logo.png'" [alt]="line.product.name" class="product-thumb" />
               <span>{{ line.product.name }}</span>
             </td>
-            <td class="col-price" data-label="Precio">Q{{ line.product.price | number:'1.2-2' }}</td>
+            <td class="col-price" data-label="Precio">Q{{ linePrice(line) | number:'1.0-0' }}</td>
             <td class="col-qty" data-label="Cantidad">
               <button type="button" class="qty-btn" (click)="subtractQty(line.product.id)" aria-label="Menos">−</button>
               <span class="qty-value">{{ line.qty }}</span>
               <button type="button" class="qty-btn" (click)="addQty(line.product.id)" aria-label="Más">+</button>
             </td>
-            <td class="col-subtotal" data-label="Subtotal">Q{{ line.product.price * line.qty | number:'1.2-2' }}</td>
+            <td class="col-subtotal" data-label="Subtotal">Q{{ lineSubtotal(line) | number:'1.0-0' }}</td>
             <td class="col-action" data-label="Acción">
               <button type="button" class="btn-remove" (click)="remove(line.product.id)" title="Quitar del carrito" aria-label="Quitar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -112,7 +112,7 @@
       <div class="cart-footer">
         <div class="total-row">
           <span class="total-label">Total:</span>
-          <span class="total-value">Q{{ total() | number:'1.2-2' }}</span>
+          <span class="total-value">Q{{ total() | number:'1.0-0' }}</span>
         </div>
         <div class="cart-actions">
           <button type="button" class="btn btn-secondary" (click)="copyLink()">

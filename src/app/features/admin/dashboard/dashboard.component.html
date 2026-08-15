@@ -56,21 +56,23 @@
 
   <h1 class="dashboard-title">Estadísticas del sitio web</h1>
 
-  @if (dataSource === 'mock') {
-    <div class="data-source-banner mock">
-      Datos de demostración. Configurá <code>GA4_PROPERTY_ID</code> y GTM en producción para ver tráfico real.
-    </div>
-  } @else {
+  @if (dataSource === 'ga4') {
     <div class="data-source-banner live">
       Conectado a Google Analytics 4.
     </div>
+  } @else {
+    <div class="data-source-banner mock">
+      El sitio ya registra visitas con GTM. La lectura de reportes en este panel queda pendiente de conectar
+      la propiedad GA4 en el backend. Los indicadores comerciales del negocio están en
+      <a routerLink="/admin/reportes">Reportes</a>.
+    </div>
   }
 
-  @if (loading) {
+  @if (dataSource === 'ga4' && loading) {
     <p class="loading-message">Cargando estadísticas...</p>
-  } @else if (error) {
+  } @else if (dataSource === 'ga4' && error) {
     <p class="error-message">{{ error }}</p>
-  } @else {
+  } @else if (dataSource === 'ga4') {
   <div class="stats-grid">
     <div class="stat-card">
       <h3 class="stat-title">Visitas totales</h3>

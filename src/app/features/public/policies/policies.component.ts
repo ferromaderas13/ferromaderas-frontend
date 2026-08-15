@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PolicyPage, PolicyService } from '../../../core/services/policy';
+import { PolicyIconComponent } from '../../../shared/components/policy-icon/policy-icon.component';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-policies',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PolicyIconComponent],
   templateUrl: './policies.component.html',
   styleUrl: './policies.component.scss'
 })

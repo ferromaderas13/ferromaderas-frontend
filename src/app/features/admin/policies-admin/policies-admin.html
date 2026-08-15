@@ -16,13 +16,13 @@
         <p>{{ policyPage.subtitle }}</p>
       </section>
       <section class="policies-grid">
-        <div class="policy-card card" *ngFor="let policy of policies; trackBy: trackByFn">
+        <div class="policy-card card" *ngFor="let policy of policies; trackBy: trackByFn; let i = index">
           <div class="policy-header">
             <h2>{{ policy.title }}</h2>
           </div>
           <div class="policy-content">
             <div class="policy-icon">
-              <img [src]="policy.icon" [alt]="policy.title" />
+              <app-policy-icon [policy]="policy" [index]="i" />
             </div>
             <ul class="policy-list">
               <li *ngFor="let item of policy.content; trackBy: trackByFn">{{ item }}</li>
@@ -50,7 +50,7 @@
           </div>
           <div class="policy-content">
             <div class="policy-icon">
-              <img [src]="policy.icon" [alt]="policy.title" class="icon-preview" />
+              <app-policy-icon [policy]="policy" [index]="i" />
               <div class="icon-actions">
                 <input type="file" accept=".jpg,.jpeg,.png" (change)="onPolicyImageSelect(policy, $event)" class="icon-file-input" [id]="'policy-icon-' + i" />
                 <label [attr.for]="'policy-icon-' + i" class="icon-file-label">Cambiar imagen (JPG, JPEG o PNG)</label>
@@ -87,13 +87,13 @@
           <p>{{ policyPage.subtitle }}</p>
         </section>
         <section class="preview-grid">
-          <div class="preview-card" *ngFor="let policy of policies">
+          <div class="preview-card" *ngFor="let policy of policies; let i = index">
             <div class="preview-card-header">
               <h2>{{ policy.title }}</h2>
             </div>
             <div class="preview-card-content">
               <div class="preview-icon">
-                <img [src]="policy.icon" [alt]="policy.title" />
+                <app-policy-icon [policy]="policy" [index]="i" />
               </div>
               <ul class="preview-list">
                 <li *ngFor="let item of policy.content">{{ item }}</li>

@@ -1,0 +1,42 @@
+<div class="policy-glyph" [attr.aria-hidden]="true">
+  <img
+    *ngIf="hasCustomIcon"
+    [src]="policy.icon"
+    [alt]="policy.title"
+    (error)="onImgError()"
+  />
+  <ng-container *ngIf="!hasCustomIcon" [ngSwitch]="key">
+    <svg *ngSwitchCase="'price'" viewBox="0 0 48 48" fill="none">
+      <path d="M20 8h16l8 8v16H20V8Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M20 16h24M28 8v8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="16" cy="32" r="8" stroke="currentColor" stroke-width="2.4"/>
+      <path d="M13 32h6M16 29v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <svg *ngSwitchCase="'delivery'" viewBox="0 0 48 48" fill="none">
+      <path d="M6 16h22v18H6V16Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M28 22h8l6 8v4h-14V22Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+      <circle cx="14" cy="38" r="3.5" stroke="currentColor" stroke-width="2.2"/>
+      <circle cx="36" cy="38" r="3.5" stroke="currentColor" stroke-width="2.2"/>
+    </svg>
+    <svg *ngSwitchCase="'returns'" viewBox="0 0 48 48" fill="none">
+      <path d="M16 14H8v8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M10 20a14 14 0 1 1-2 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M8 14l8 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+    <svg *ngSwitchCase="'stock'" viewBox="0 0 48 48" fill="none">
+      <path d="M8 20 24 12l16 8-16 8-16-8Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M8 20v12l16 8 16-8V20" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M24 28v12" stroke="currentColor" stroke-width="2.4"/>
+    </svg>
+    <svg *ngSwitchCase="'payment'" viewBox="0 0 48 48" fill="none">
+      <rect x="8" y="14" width="32" height="20" rx="3" stroke="currentColor" stroke-width="2.4"/>
+      <path d="M8 20h32" stroke="currentColor" stroke-width="2.4"/>
+      <path d="M14 28h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+    <svg *ngSwitchDefault viewBox="0 0 48 48" fill="none">
+      <rect x="12" y="10" width="24" height="28" rx="3" stroke="currentColor" stroke-width="2.4"/>
+      <path d="M18 8v4M30 8v4M12 18h24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M18 24h4M26 24h4M18 30h4M26 30h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+  </ng-container>
+</div>

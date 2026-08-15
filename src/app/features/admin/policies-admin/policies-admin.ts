@@ -2,13 +2,14 @@ import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Policy, PolicyPage, PolicyService } from '../../../core/services/policy';
+import { PolicyIconComponent } from '../../../shared/components/policy-icon/policy-icon.component';
 import { NotificationService } from '../../../core/services/notification.service';
 import { clientFacingHttpMessage } from '../../../core/http/client-facing-error';
 
 @Component({
   selector: 'app-policies-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PolicyIconComponent],
   templateUrl: './policies-admin.html',
   styleUrl: './policies-admin.scss',
 })

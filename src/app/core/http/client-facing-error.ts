@@ -5,6 +5,15 @@ import { HttpErrorResponse } from '@angular/common/http';
  */
 export function clientFacingHttpMessage(err: unknown, fallback: string): string {
   if (err instanceof HttpErrorResponse) {
+    if (err.status === 401 || err.status === 403) {
+      const nested = err.error?.message;
+      if (typeof nested === 'string' && nested.trim()) {
+        return nested;
+      }
+      if (Array.isArray(nested) && typeof nested[0] === 'string' && nested[0].trim()) {
+        return nested[0];
+      }
+    }
     if (err.status === 0) {
       return 'No hay conexión con el servidor. Intenta más tarde.';
     }

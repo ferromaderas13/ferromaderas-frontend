@@ -36,6 +36,11 @@ export class ClientAccountComponent implements OnInit {
   forgotLoading = false;
   forgotSuccess = '';
   forgotError = '';
+  step: 'credentials' | 'otp' = 'credentials';
+  otpCode = '';
+  challengeToken = '';
+  emailHint = '';
+  resendLoading = false;
   quotes: Quote[] = [];
   selectedQuote: Quote | null = null;
   seguimiento: SeguimientoEntry[] = [];
@@ -77,6 +82,10 @@ export class ClientAccountComponent implements OnInit {
 
   setMode(next: AuthMode): void {
     this.mode = next;
+    this.step = 'credentials';
+    this.otpCode = '';
+    this.challengeToken = '';
+    this.emailHint = '';
     this.forgotError = '';
     this.forgotSuccess = '';
     if (next === 'forgot' && this.email.trim()) {
@@ -101,22 +110,103 @@ export class ClientAccountComponent implements OnInit {
     this.auth.login(this.email.trim(), this.password).subscribe({
       next: (res) => {
         this.loading = false;
-        if (res.user.role !== 'cliente') {
+        if (res.requiresTwoFactor && res.challengeToken) {
+          this.step = 'otp';
+          this.challengeToken = res.challengeToken;
+          this.emailHint = res.emailHint ?? '';
+          this.otpCode = '';
+          this.password = '';
+          return;
+        }
+        this.afterClientLogin(res.user);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.notification.showMessage(
+          clientFacingHttpMessage(err, 'Correo o contraseña incorrectos.'),
+          'error',
+        );
+      },
+    });
+  }
+
+  verifyOtp(): void {
+    const code = this.otpCode.replace(/\D/g, '');
+    if (code.length !== 6) {
+      this.notification.showMessage(
+        'Ingresá el código de 6 dígitos que enviamos a tu correo.',
+        'error',
+      );
+      return;
+    }
+    this.loading = true;
+    this.auth.verifyTwoFactor(this.challengeToken, code).subscribe({
+      next: (res) => {
+        this.loading = false;
+        if (res.user?.role !== 'cliente') {
           this.auth.logout();
+          this.step = 'credentials';
           this.notification.showMessage(
             'Esta cuenta es de personal interno. Usá el acceso administrativo.',
             'error',
           );
           return;
         }
-        this.loadQuotes();
-        this.notification.showMessage(`Bienvenido, ${res.user.name}.`, 'success');
+        this.afterClientLogin(res.user);
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
-        this.notification.showMessage('Correo o contraseña incorrectos.', 'error');
+        this.notification.showMessage(
+          clientFacingHttpMessage(err, 'No se pudo verificar el código.'),
+          'error',
+        );
       },
     });
+  }
+
+  resendOtp(): void {
+    this.resendLoading = true;
+    this.auth.resendTwoFactor(this.challengeToken).subscribe({
+      next: (res) => {
+        this.resendLoading = false;
+        this.challengeToken = res.challengeToken;
+        this.emailHint = res.emailHint ?? this.emailHint;
+        this.otpCode = '';
+        this.notification.showMessage('Te enviamos un código nuevo.', 'success');
+      },
+      error: (err) => {
+        this.resendLoading = false;
+        this.notification.showMessage(
+          clientFacingHttpMessage(err, 'No se pudo reenviar el código.'),
+          'error',
+        );
+      },
+    });
+  }
+
+  backToLogin(): void {
+    this.step = 'credentials';
+    this.otpCode = '';
+    this.challengeToken = '';
+    this.emailHint = '';
+  }
+
+  private afterClientLogin(user: { name: string; role: string } | undefined): void {
+    if (!user) {
+      this.notification.showMessage('No se pudo iniciar sesión.', 'error');
+      return;
+    }
+    if (user.role !== 'cliente') {
+      this.auth.logout();
+      this.notification.showMessage(
+        'Esta cuenta es de personal interno. Usá el acceso administrativo.',
+        'error',
+      );
+      return;
+    }
+    this.step = 'credentials';
+    this.loadQuotes();
+    this.notification.showMessage(`Bienvenido, ${user.name}.`, 'success');
   }
 
   private register(): void {
@@ -203,6 +293,10 @@ export class ClientAccountComponent implements OnInit {
     this.selectedQuote = null;
     this.seguimiento = [];
     this.mode = 'login';
+    this.step = 'credentials';
+    this.otpCode = '';
+    this.challengeToken = '';
+    this.emailHint = '';
   }
 
   openQuote(q: Quote): void {

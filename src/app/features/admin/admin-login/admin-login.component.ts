@@ -20,6 +20,12 @@ export class AdminLoginComponent {
   loading = false;
   error = '';
 
+  step: 'credentials' | 'otp' = 'credentials';
+  otpCode = '';
+  challengeToken = '';
+  emailHint = '';
+  resendLoading = false;
+
   showForgotPassword = false;
   forgotEmail = '';
   forgotLoading = false;
@@ -46,13 +52,18 @@ export class AdminLoginComponent {
     }
     this.loading = true;
     this.auth.login(this.username.trim(), this.password).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading = false;
-        let returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/admin/dashboard';
-        if (!returnUrl.startsWith('/admin')) returnUrl = '/admin/dashboard';
-        setTimeout(() => {
-          this.router.navigateByUrl(returnUrl);
-        }, 50);
+        if (res.requiresTwoFactor && res.challengeToken) {
+          this.step = 'otp';
+          this.challengeToken = res.challengeToken;
+          this.emailHint = res.emailHint ?? '';
+          this.otpCode = '';
+          this.password = '';
+          this.cdr.detectChanges();
+          return;
+        }
+        this.goToAdmin();
       },
       error: (err) => {
         const setError = () => {
@@ -82,6 +93,75 @@ export class AdminLoginComponent {
         this.ngZone.run(setError);
       },
     });
+  }
+
+  onVerifyOtp(): void {
+    this.error = '';
+    const code = this.otpCode.replace(/\D/g, '');
+    if (code.length !== 6) {
+      this.error = 'Ingresa el código de 6 dígitos que enviamos a tu correo.';
+      return;
+    }
+    this.loading = true;
+    this.auth.verifyTwoFactor(this.challengeToken, code).subscribe({
+      next: () => {
+        this.loading = false;
+        this.goToAdmin();
+      },
+      error: (err) => {
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.error = clientFacingHttpMessage(
+            err,
+            'No se pudo verificar el código. Intenta de nuevo.',
+          );
+          this.cdr.detectChanges();
+        });
+      },
+    });
+  }
+
+  resendOtp(): void {
+    this.error = '';
+    this.resendLoading = true;
+    this.auth.resendTwoFactor(this.challengeToken).subscribe({
+      next: (res) => {
+        this.ngZone.run(() => {
+          this.resendLoading = false;
+          this.challengeToken = res.challengeToken;
+          this.emailHint = res.emailHint ?? this.emailHint;
+          this.otpCode = '';
+          this.error = '';
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err) => {
+        this.ngZone.run(() => {
+          this.resendLoading = false;
+          this.error = clientFacingHttpMessage(
+            err,
+            'No se pudo reenviar el código. Intenta de nuevo.',
+          );
+          this.cdr.detectChanges();
+        });
+      },
+    });
+  }
+
+  backToCredentials(): void {
+    this.step = 'credentials';
+    this.otpCode = '';
+    this.challengeToken = '';
+    this.emailHint = '';
+    this.error = '';
+  }
+
+  private goToAdmin(): void {
+    let returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/admin/dashboard';
+    if (!returnUrl.startsWith('/admin')) returnUrl = '/admin/dashboard';
+    setTimeout(() => {
+      this.router.navigateByUrl(returnUrl);
+    }, 50);
   }
 
   onForgotPassword(): void {

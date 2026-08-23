@@ -173,6 +173,18 @@
   font-size: 0.9rem;
 }
 
+.otp-input {
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.otp-actions {
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
 .btn-block {
   width: 100%;
   padding: 0.85rem 1rem;

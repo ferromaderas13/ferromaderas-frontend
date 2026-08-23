@@ -16,7 +16,7 @@
 
   <!-- Autenticación -->
   <section class="auth-shell card" *ngIf="!isLoggedIn">
-    <div class="auth-tabs" role="tablist">
+    <div class="auth-tabs" role="tablist" *ngIf="step === 'credentials'">
       <button
         type="button"
         role="tab"
@@ -38,7 +38,7 @@
     </div>
 
     <!-- Login -->
-    <form *ngIf="mode === 'login'" (ngSubmit)="submit()" class="auth-form">
+    <form *ngIf="mode === 'login' && step === 'credentials'" (ngSubmit)="submit()" class="auth-form">
       <div class="field">
         <label for="login-email">Correo electrónico</label>
         <input
@@ -76,6 +76,37 @@
         ¿Primera vez acá?
         <button type="button" class="link-btn inline" (click)="setMode('register')">Creá tu cuenta</button>
       </p>
+    </form>
+
+    <form *ngIf="mode === 'login' && step === 'otp'" (ngSubmit)="verifyOtp()" class="auth-form">
+      <p class="auth-hint">
+        Enviamos un código de 6 dígitos a <strong>{{ emailHint || 'tu correo' }}</strong>.
+        Vence en 10 minutos.
+      </p>
+      <div class="field">
+        <label for="login-otp">Código de verificación</label>
+        <input
+          id="login-otp"
+          type="text"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="6"
+          [(ngModel)]="otpCode"
+          name="otp"
+          placeholder="000000"
+          class="otp-input"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="loading">
+        {{ loading ? 'Verificando...' : 'Verificar código' }}
+      </button>
+      <div class="form-footer otp-actions">
+        <button type="button" class="link-btn" (click)="resendOtp()" [disabled]="resendLoading || loading">
+          {{ resendLoading ? 'Reenviando...' : 'Reenviar código' }}
+        </button>
+        <button type="button" class="link-btn" (click)="backToLogin()">Volver</button>
+      </div>
     </form>
 
     <!-- Registro -->

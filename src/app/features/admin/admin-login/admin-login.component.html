@@ -16,40 +16,81 @@
 
       <!-- Sección del formulario -->
       <div class="form-section">
-        <h2 class="form-title">Ingresa Los siguientes datos:</h2>
-        
-        @if (error) {
-          <p class="login-error">{{ error }}</p>
+        @if (step === 'credentials') {
+          <h2 class="form-title">Ingresa Los siguientes datos:</h2>
+
+          @if (error) {
+            <p class="login-error">{{ error }}</p>
+          }
+          <div class="form-group">
+            <label class="form-label">Usuario</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="Usuario"
+              [(ngModel)]="username"
+              [disabled]="loading"
+              autocomplete="username"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input
+              type="password"
+              class="form-input"
+              placeholder="ingresa contraseña"
+              [(ngModel)]="password"
+              [disabled]="loading"
+              autocomplete="current-password"
+              (keyup.enter)="onSubmit()"
+            />
+          </div>
+
+          <button type="button" class="forgot-password-link" (click)="openForgotModal()">
+            ¿Olvidaste tu contraseña?
+          </button>
+
+          <button class="login-button" type="button" (click)="onSubmit()" [disabled]="loading">
+            {{ loading ? 'Ingresando...' : 'Ingresar' }}
+          </button>
+        } @else {
+          <h2 class="form-title">Código de verificación</h2>
+          <p class="otp-hint">
+            Enviamos un código de 6 dígitos a {{ emailHint || 'tu correo' }}. Vence en 10 minutos.
+          </p>
+          @if (error) {
+            <p class="login-error">{{ error }}</p>
+          }
+          <div class="form-group">
+            <label class="form-label">Código</label>
+            <input
+              type="text"
+              class="form-input otp-input"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              placeholder="000000"
+              [(ngModel)]="otpCode"
+              [disabled]="loading"
+              (keyup.enter)="onVerifyOtp()"
+            />
+          </div>
+          <button class="login-button" type="button" (click)="onVerifyOtp()" [disabled]="loading">
+            {{ loading ? 'Verificando...' : 'Verificar' }}
+          </button>
+          <button
+            type="button"
+            class="forgot-password-link"
+            (click)="resendOtp()"
+            [disabled]="resendLoading || loading"
+          >
+            {{ resendLoading ? 'Reenviando...' : 'Reenviar código' }}
+          </button>
+          <button type="button" class="forgot-password-link" (click)="backToCredentials()">
+            Volver
+          </button>
         }
-        <div class="form-group">
-          <label class="form-label">Usuario</label>
-          <input 
-            type="text" 
-            class="form-input" 
-            placeholder="Usuario"
-            [(ngModel)]="username"
-            [disabled]="loading"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Contraseña</label>
-          <input 
-            type="password" 
-            class="form-input" 
-            placeholder="ingresa contraseña"
-            [(ngModel)]="password"
-            [disabled]="loading"
-          />
-        </div>
-
-        <button type="button" class="forgot-password-link" (click)="openForgotModal()">
-          ¿Olvidaste tu contraseña?
-        </button>
-
-        <button class="login-button" type="button" (click)="onSubmit()" [disabled]="loading">
-          {{ loading ? 'Ingresando...' : 'Ingresar' }}
-        </button>
       </div>
     </div>
 

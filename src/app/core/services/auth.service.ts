@@ -19,7 +19,10 @@ export interface AuthUser {
 }
 
 interface LoginResponse {
-  user: AuthUser;
+  user?: AuthUser;
+  requiresTwoFactor?: boolean;
+  challengeToken?: string;
+  emailHint?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -67,11 +70,32 @@ export class AuthService {
 
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.api}/login`, { username, password }).pipe(
-      timeout(8000),
+      timeout(20000),
       tap((res) => {
-        this.persistUser(res.user);
+        if (res.user && !res.requiresTwoFactor) this.persistUser(res.user);
       })
     );
+  }
+
+  verifyTwoFactor(challengeToken: string, code: string): Observable<LoginResponse> {
+    return this.http
+      .post<LoginResponse>(`${this.api}/verify-2fa`, { challengeToken, code })
+      .pipe(
+        timeout(15000),
+        tap((res) => {
+          if (res.user) this.persistUser(res.user);
+        }),
+      );
+  }
+
+  resendTwoFactor(
+    challengeToken: string,
+  ): Observable<{ challengeToken: string; emailHint: string }> {
+    return this.http
+      .post<{ challengeToken: string; emailHint: string }>(`${this.api}/resend-2fa`, {
+        challengeToken,
+      })
+      .pipe(timeout(15000));
   }
 
   logout(): void {

@@ -24,6 +24,10 @@ export function clientFacingHttpMessage(err: unknown, fallback: string): string 
       return 'No se encontró lo solicitado.';
     }
     if (err.status === 503 || err.status === 502 || err.status === 504) {
+      const nested = err.error?.message;
+      if (typeof nested === 'string' && nested.trim()) {
+        return nested;
+      }
       return 'El servicio no está disponible en este momento. Intenta más tarde.';
     }
     if (err.status >= 500) {

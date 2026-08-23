@@ -131,15 +131,50 @@
   color: #4b5563;
   font-size: 14px;
   font-weight: 500;
-  margin: -8px 0 18px;
+  margin: 0 0 18px;
   line-height: 1.45;
 }
 
 .otp-input {
-  letter-spacing: 0.35em;
+  letter-spacing: 0.28em;
   text-align: center;
   font-size: 22px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.otp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 18px;
+}
+
+.otp-sep {
+  color: #9ca3af;
+  font-weight: 700;
+  user-select: none;
+}
+
+.otp-link {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #3b82f6;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+
+  &:hover:not(:disabled) {
+    color: #2563eb;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }
 
 .forgot-password-link {

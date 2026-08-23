@@ -174,15 +174,25 @@
 }
 
 .otp-input {
-  letter-spacing: 0.4em;
+  letter-spacing: 0.22em;
   text-align: center;
   font-size: 1.35rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .otp-actions {
-  justify-content: space-between;
-  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.otp-sep {
+  color: #94a3b8;
+  font-weight: 700;
+  user-select: none;
 }
 
 .btn-block {

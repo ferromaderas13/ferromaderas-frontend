@@ -105,6 +105,7 @@
         <button type="button" class="link-btn" (click)="resendOtp()" [disabled]="resendLoading || loading">
           {{ resendLoading ? 'Reenviando...' : 'Reenviar código' }}
         </button>
+        <span class="otp-sep" aria-hidden="true">·</span>
         <button type="button" class="link-btn" (click)="backToLogin()">Volver</button>
       </div>
     </form>

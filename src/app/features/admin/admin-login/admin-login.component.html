@@ -79,17 +79,20 @@
           <button class="login-button" type="button" (click)="onVerifyOtp()" [disabled]="loading">
             {{ loading ? 'Verificando...' : 'Verificar' }}
           </button>
-          <button
-            type="button"
-            class="forgot-password-link"
-            (click)="resendOtp()"
-            [disabled]="resendLoading || loading"
-          >
-            {{ resendLoading ? 'Reenviando...' : 'Reenviar código' }}
-          </button>
-          <button type="button" class="forgot-password-link" (click)="backToCredentials()">
-            Volver
-          </button>
+          <div class="otp-actions">
+            <button
+              type="button"
+              class="otp-link"
+              (click)="resendOtp()"
+              [disabled]="resendLoading || loading"
+            >
+              {{ resendLoading ? 'Reenviando...' : 'Reenviar código' }}
+            </button>
+            <span class="otp-sep" aria-hidden="true">·</span>
+            <button type="button" class="otp-link" (click)="backToCredentials()">
+              Volver
+            </button>
+          </div>
         }
       </div>
     </div>

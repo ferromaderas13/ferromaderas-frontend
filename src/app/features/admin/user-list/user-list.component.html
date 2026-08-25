@@ -76,6 +76,12 @@
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
             </button>
+            <button type="button" class="btn-action btn-password" (click)="resetPassword(user)" title="Restablecer contraseña">
+              <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </button>
             <button type="button" class="btn-action btn-toggle" (click)="toggleEstado(user)" [title]="user.estado === 'activo' ? 'Desactivar' : 'Activar'">
               <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -128,6 +134,9 @@
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" (click)="closeViewModal()">Cerrar</button>
+      <button type="button" class="btn btn-secondary" (click)="resetPassword(viewModalUser!)">
+        Restablecer contraseña
+      </button>
       <button type="button" class="btn btn-primary" (click)="editUser(viewModalUser!); closeViewModal()">Editar</button>
     </div>
   </div>

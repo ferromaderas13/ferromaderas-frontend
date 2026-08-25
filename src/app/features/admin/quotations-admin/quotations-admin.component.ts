@@ -144,9 +144,9 @@ export class QuotationsAdminComponent implements OnInit {
     return this.auth.hasRole('vendedor');
   }
 
-  /** Admin/gerente pueden asignar vendedores. */
+  /** Admin o gerente asignan vendedor. El editor ve el listado pero no asigna (RF-21). */
   get canManageAssignments(): boolean {
-    return !this.isVendedorView;
+    return this.auth.hasRole('administrador') || this.auth.hasRole('gerente');
   }
 
   get pageTitle(): string {

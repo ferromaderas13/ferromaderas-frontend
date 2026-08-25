@@ -131,6 +131,30 @@ export class UserListComponent implements OnInit {
     });
   }
 
+  resetPassword(user: ListUser): void {
+    this.notification
+      .confirm(
+        'Restablecer contraseña',
+        `Se enviará una contraseña temporal a ${user.email || user.username} y deberá cambiarla al entrar. ¿Continuar?`,
+      )
+      .then((ok) => {
+        if (!ok) return;
+        this.usersService.resetPassword(user.id).subscribe({
+          next: (res) => {
+            this.notification.showMessage(
+              res.message || `Se envió una contraseña temporal a ${user.email}.`,
+              'success',
+            );
+          },
+          error: (err) =>
+            this.notification.showMessage(
+              clientFacingHttpMessage(err, 'No se pudo restablecer la contraseña.'),
+              'error',
+            ),
+        });
+      });
+  }
+
   toggleEstado(user: ListUser): void {
     const accion = user.estado === 'activo' ? 'desactivar' : 'activar';
     this.notification

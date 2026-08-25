@@ -78,10 +78,10 @@
       </p>
     </form>
 
-    <form *ngIf="mode === 'login' && step === 'otp'" (ngSubmit)="verifyOtp()" class="auth-form">
+    <form *ngIf="step === 'otp'" (ngSubmit)="verifyOtp()" class="auth-form">
       <p class="auth-hint">
         Enviamos un código de 6 dígitos a <strong>{{ emailHint || 'tu correo' }}</strong>.
-        Vence en 10 minutos.
+        Vence en 10 minutos. Sin ese código no se muestra el historial de cotizaciones.
       </p>
       <div class="field">
         <label for="login-otp">Código de verificación</label>
@@ -111,7 +111,7 @@
     </form>
 
     <!-- Registro -->
-    <form *ngIf="mode === 'register'" (ngSubmit)="submit()" class="auth-form">
+    <form *ngIf="mode === 'register' && step === 'credentials'" (ngSubmit)="submit()" class="auth-form">
       <div class="field">
         <label for="reg-name">Nombre completo</label>
         <input

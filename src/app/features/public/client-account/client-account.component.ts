@@ -46,6 +46,7 @@ export class ClientAccountComponent implements OnInit {
   seguimiento: SeguimientoEntry[] = [];
   loadingSeguimiento = false;
   loadingQuotes = false;
+  private pendingLinkedQuotes = 0;
 
   private static readonly EMAIL_REGEX =
     /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -206,7 +207,12 @@ export class ClientAccountComponent implements OnInit {
     }
     this.step = 'credentials';
     this.loadQuotes();
-    this.notification.showMessage(`Bienvenido, ${user.name}.`, 'success');
+    const linked =
+      this.pendingLinkedQuotes > 0
+        ? ` Se vincularon ${this.pendingLinkedQuotes} cotización(es) previa(s).`
+        : '';
+    this.pendingLinkedQuotes = 0;
+    this.notification.showMessage(`Bienvenido, ${user.name}.${linked}`, 'success');
   }
 
   private register(): void {
@@ -226,17 +232,26 @@ export class ClientAccountComponent implements OnInit {
     this.auth.registerClient(this.email, this.password, this.name, this.phone).subscribe({
       next: (res) => {
         this.loading = false;
-        const linked =
-          res.linkedQuotes > 0
-            ? ` Se vincularon ${res.linkedQuotes} cotización(es) previa(s).`
-            : '';
-        this.notification.showMessage(`Cuenta creada.${linked}`, 'success');
+        this.pendingLinkedQuotes = res.linkedQuotes ?? 0;
+        if (res.requiresTwoFactor && res.challengeToken) {
+          this.step = 'otp';
+          this.challengeToken = res.challengeToken;
+          this.emailHint = res.emailHint ?? '';
+          this.otpCode = '';
+          this.password = '';
+          this.notification.showMessage(
+            'Cuenta creada. Ingresá el código que enviamos a tu correo para ver tus cotizaciones.',
+            'success',
+          );
+          return;
+        }
+        this.notification.showMessage('Cuenta creada.', 'success');
         this.loadQuotes();
       },
       error: (err) => {
         this.loading = false;
         this.notification.showMessage(
-          err?.error?.message ?? 'No se pudo crear la cuenta.',
+          clientFacingHttpMessage(err, 'No se pudo crear la cuenta.'),
           'error',
         );
       },
@@ -297,6 +312,7 @@ export class ClientAccountComponent implements OnInit {
     this.otpCode = '';
     this.challengeToken = '';
     this.emailHint = '';
+    this.pendingLinkedQuotes = 0;
   }
 
   openQuote(q: Quote): void {

@@ -169,9 +169,21 @@ export class AuthService {
     password: string,
     name: string,
     phone?: string,
-  ): Observable<{ user: AuthUser; linkedQuotes: number }> {
+  ): Observable<{
+    user?: AuthUser;
+    linkedQuotes?: number;
+    requiresTwoFactor?: boolean;
+    challengeToken?: string;
+    emailHint?: string;
+  }> {
     return this.http
-      .post<{ user: AuthUser; linkedQuotes: number }>(`${this.api}/register-client`, {
+      .post<{
+        user?: AuthUser;
+        linkedQuotes?: number;
+        requiresTwoFactor?: boolean;
+        challengeToken?: string;
+        emailHint?: string;
+      }>(`${this.api}/register-client`, {
         email: email.trim().toLowerCase(),
         password,
         name: name.trim(),
@@ -179,7 +191,7 @@ export class AuthService {
       })
       .pipe(
         tap((res) => {
-          if (res.user) this.persistUser(res.user);
+          if (res.user && !res.requiresTwoFactor) this.persistUser(res.user);
         }),
       );
   }

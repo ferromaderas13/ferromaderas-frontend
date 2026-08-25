@@ -69,6 +69,13 @@ export class UsersService {
     });
   }
 
+  resetPassword(id: string): Observable<{ ok: boolean; message: string }> {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.api}/${id}/reset-password`,
+      {},
+    );
+  }
+
   update(
     id: string,
     data: { name?: string; email?: string; phone?: string; role?: string; status?: string }

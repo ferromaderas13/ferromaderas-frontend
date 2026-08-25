@@ -14,6 +14,15 @@ export function clientFacingHttpMessage(err: unknown, fallback: string): string 
         return nested[0];
       }
     }
+    if (err.status === 400 || err.status === 409) {
+      const nested = err.error?.message;
+      if (typeof nested === 'string' && nested.trim()) {
+        return nested;
+      }
+      if (Array.isArray(nested) && typeof nested[0] === 'string' && nested[0].trim()) {
+        return nested[0];
+      }
+    }
     if (err.status === 0) {
       return 'No hay conexión con el servidor. Intenta más tarde.';
     }

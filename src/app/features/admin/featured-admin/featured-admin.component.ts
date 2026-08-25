@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogService, FEATURED_LIMIT } from '../../../core/services/catalog.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { clientFacingHttpMessage } from '../../../core/http/client-facing-error';
 import { Product } from '../../../core/models/product.model';
 
 @Component({
@@ -70,7 +71,11 @@ export class FeaturedAdminComponent implements OnInit {
         this.loadFeatured();
         this.notification.showMessage(`"${product.name}" agregado a destacados.`, 'success');
       },
-      error: () => this.notification.showMessage('Error al actualizar.', 'error'),
+      error: (err) =>
+        this.notification.showMessage(
+          clientFacingHttpMessage(err, 'No se pudo actualizar el destacado.'),
+          'error',
+        ),
     });
   }
 
@@ -80,7 +85,11 @@ export class FeaturedAdminComponent implements OnInit {
         this.loadFeatured();
         this.notification.showMessage(`"${product.name}" quitado de destacados.`, 'success');
       },
-      error: () => this.notification.showMessage('Error al actualizar.', 'error'),
+      error: (err) =>
+        this.notification.showMessage(
+          clientFacingHttpMessage(err, 'No se pudo actualizar el destacado.'),
+          'error',
+        ),
     });
   }
 

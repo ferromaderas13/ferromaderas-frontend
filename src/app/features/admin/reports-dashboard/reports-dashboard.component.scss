@@ -54,6 +54,15 @@
     &:hover {
       background: #1e40af;
     }
+
+    &.btn-csv {
+      background: #0f3d4c;
+      white-space: nowrap;
+
+      &:hover {
+        background: #154a5c;
+      }
+    }
   }
 }
 

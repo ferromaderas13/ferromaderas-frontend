@@ -343,6 +343,55 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
     URL.revokeObjectURL(url);
   }
 
+  exportPowerBiCsv(): void {
+    if (!this.quotations.length) return;
+    const header = [
+      'codigo',
+      'fecha',
+      'estado',
+      'cliente',
+      'email',
+      'telefono',
+      'vendedor',
+      'subtotal',
+      'descuento_porcentaje',
+      'descuento_monto',
+      'total_con_iva',
+      'aprobacion',
+    ];
+    const rows = this.quotations.map((q) =>
+      [
+        q.codigo,
+        q.fechaHora,
+        q.estado,
+        q.cliente,
+        q.email ?? '',
+        q.telefono,
+        q.vendedorNombre ?? '',
+        q.subtotal,
+        q.descuentoPorcentaje,
+        q.descuentoMonto,
+        q.totalConIva,
+        q.aprobacion,
+      ]
+        .map((v) => this.csvCell(String(v ?? '')))
+        .join(','),
+    );
+    const csv = `\uFEFF${header.join(',')}\n${rows.join('\n')}`;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ferromaderas-cotizaciones-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private csvCell(value: string): string {
+    if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+    return value;
+  }
+
   private async generatePdfBlob(
     sectionId: string,
   ): Promise<{ blob: Blob; pages: string[] } | null> {

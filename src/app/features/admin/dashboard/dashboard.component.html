@@ -4,8 +4,8 @@
       <div class="alerts-header">
         <h2 class="alerts-title">Alertas de seguimiento comercial</h2>
         <p class="alerts-subtitle">
-          Cotizaciones que requieren acción. También se envían por correo al buzón de la organización
-          configurado en SMTP.
+          Cotizaciones que requieren acción. También se envían por correo transaccional al buzón de la
+          organización.
         </p>
       </div>
 
@@ -60,10 +60,16 @@
     <div class="data-source-banner live">
       Conectado a Google Analytics 4.
     </div>
+  } @else if (dataSource === 'error') {
+    <div class="data-source-banner mock">
+      GA4 está configurado en el backend, pero no se pudieron leer los reportes (credenciales o permisos).
+      El sitio sí registra visitas con GTM. Los indicadores comerciales están en
+      <a routerLink="/admin/reportes">Reportes</a>.
+    </div>
   } @else {
     <div class="data-source-banner mock">
-      El sitio ya registra visitas con GTM. La lectura de reportes en este panel queda pendiente de conectar
-      la propiedad GA4 en el backend. Los indicadores comerciales del negocio están en
+      El sitio ya registra visitas con GTM. Para ver esos números aquí hace falta
+      GA4_PROPERTY_ID y GA4_SERVICE_ACCOUNT_JSON en Railway. Los indicadores comerciales del negocio están en
       <a routerLink="/admin/reportes">Reportes</a>.
     </div>
   }

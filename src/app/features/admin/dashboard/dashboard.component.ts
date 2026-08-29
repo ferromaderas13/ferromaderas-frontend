@@ -214,7 +214,9 @@ export class DashboardComponent implements OnInit {
   }
 
   alertLabel(tipo: FollowUpAlertItem['tipo']): string {
-    return tipo === 'nueva_sin_vendedor' ? 'Sin vendedor' : 'Descuento pendiente';
+    if (tipo === 'nueva_sin_vendedor') return 'Sin vendedor';
+    if (tipo === 'descuento_pendiente') return 'Descuento pendiente';
+    return 'Sin movimiento';
   }
 
   formatAlertFecha(iso: string): string {

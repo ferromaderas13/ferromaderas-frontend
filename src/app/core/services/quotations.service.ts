@@ -38,6 +38,12 @@ export class QuotationsService {
       aprobacionNota: q.aprobacionNota,
       vendedorId: q.vendedorId,
       vendedorNombre: q.vendedorNombre,
+      createdAt: q.createdAt,
+      items: q.items?.map((it) => ({
+        codigo: it.codigo,
+        nombre: it.nombre,
+        cantidad: it.cantidad,
+      })),
     };
   }
 

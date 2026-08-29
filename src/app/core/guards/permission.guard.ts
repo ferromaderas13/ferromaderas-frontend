@@ -25,3 +25,21 @@ export const requirePermission =
   (permission: string): CanActivateFn =>
   () =>
     permissionGuard(permission);
+
+/**
+ * Restringe rutas a uno o más roles (p. ej. tablero gerencial: admin/gerente).
+ */
+export const requireAnyRole =
+  (roles: readonly string[]): CanActivateFn =>
+  () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    if (!auth.isAuthenticated()) {
+      router.navigate(['/admin-login']);
+      return false;
+    }
+    const role = auth.currentUser()?.role;
+    if (role && roles.includes(role)) return true;
+    router.navigate(['/admin/dashboard']);
+    return false;
+  };

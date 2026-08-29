@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { ChartConfiguration, ChartData } from 'chart.js';
 import { QuotationsService } from '../../../core/services/quotations.service';
-import { QuotesApiService } from '../../../core/services/quotes-api.service';
 import { ChatbotAdminService } from '../../../core/services/chatbot-admin.service';
-import { Quotation, QuotationStatus } from '../../../core/models/quotation.model';
+import { Quotation, QuotationStatus, ApprovalState } from '../../../core/models/quotation.model';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -32,6 +31,25 @@ interface PreguntaFrecuente {
   veces: number;
 }
 
+interface IvaResumen {
+  cotizadas: number;
+  montoConIva: number;
+  neto: number;
+  iva: number;
+  cerradas: number;
+  montoCerrado: number;
+  ivaCerrado: number;
+}
+
+interface DescuentoReporte {
+  codigo: string;
+  cliente: string;
+  porcentaje: number;
+  motivo: string;
+  aprobacion: ApprovalState;
+  autorizadoPor: string;
+}
+
 @Component({
   selector: 'app-reports-dashboard',
   standalone: true,
@@ -43,7 +61,6 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
   @ViewChild('reportContent') reportContent!: ElementRef<HTMLElement>;
 
   private quotationsService = inject(QuotationsService);
-  private quotesApi = inject(QuotesApiService);
   private chatbotAdmin = inject(ChatbotAdminService);
   private route = inject(ActivatedRoute);
 
@@ -55,6 +72,9 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
   private hasScrolledToHash = false;
 
   quotations: Quotation[] = [];
+  allQuotations: Quotation[] = [];
+  filterDesde = '';
+  filterHasta = '';
 
   /** Estado de cotizaciones - datos reales */
   estadoCotizaciones: { estado: QuotationStatus; count: number; label: string }[] = [];
@@ -83,6 +103,16 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
   /** Chatbot FAQ (métricas del backend) */
   preguntasFrecuentes: PreguntaFrecuente[] = [];
   ventasSinDatos = false;
+  ivaResumen: IvaResumen = {
+    cotizadas: 0,
+    montoConIva: 0,
+    neto: 0,
+    iva: 0,
+    cerradas: 0,
+    montoCerrado: 0,
+    ivaCerrado: 0,
+  };
+  descuentos: DescuentoReporte[] = [];
 
   searchTerm = '';
   /** Nombre del usuario que genera el informe (para PDF) */
@@ -99,20 +129,12 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     this.quotationsService.getAll().subscribe({
       next: (list) => {
-        this.quotations = list;
-        this.buildReports();
+        this.allQuotations = list;
+        this.applyPeriodFilter();
       },
       error: () => {
-        this.quotations = [];
-        this.buildReports();
-      },
-    });
-    this.quotesApi.getTopQuotedProducts().subscribe({
-      next: (list) => {
-        this.productosMasCotizados = list;
-      },
-      error: () => {
-        this.productosMasCotizados = [];
+        this.allQuotations = [];
+        this.applyPeriodFilter();
       },
     });
     this.chatbotAdmin.getMetrics().subscribe({
@@ -131,11 +153,53 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
     });
   }
 
+  applyPeriodFilter(): void {
+    const from = this.startOfDay(this.filterDesde);
+    const to = this.endOfDay(this.filterHasta);
+    this.quotations = this.allQuotations.filter((q) => {
+      const t = this.quoteTimestamp(q);
+      if (t == null) return true;
+      if (from != null && t < from) return false;
+      if (to != null && t > to) return false;
+      return true;
+    });
+    this.buildReports();
+  }
+
+  clearPeriodFilter(): void {
+    this.filterDesde = '';
+    this.filterHasta = '';
+    this.applyPeriodFilter();
+  }
+
+  private quoteTimestamp(q: Quotation): number | null {
+    if (q.createdAt) {
+      const t = new Date(q.createdAt).getTime();
+      return Number.isNaN(t) ? this.parseFecha(q.fechaHora) : t;
+    }
+    return this.parseFecha(q.fechaHora);
+  }
+
+  private startOfDay(value: string): number | null {
+    if (!value) return null;
+    const d = new Date(`${value}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? null : d.getTime();
+  }
+
+  private endOfDay(value: string): number | null {
+    if (!value) return null;
+    const d = new Date(`${value}T23:59:59.999`);
+    return Number.isNaN(d.getTime()) ? null : d.getTime();
+  }
+
   private buildReports(): void {
     this.buildEstadoCotizaciones();
+    this.buildProductosMasCotizados();
     this.buildVendedoresRanking();
     this.buildConversion();
     this.buildVentasPorPeriodo();
+    this.buildIvaResumen();
+    this.buildDescuentos();
   }
 
   ngAfterViewChecked(): void {
@@ -181,6 +245,74 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
         y: { beginAtZero: true, ticks: { stepSize: 1 } },
       },
     };
+  }
+
+  private buildProductosMasCotizados(): void {
+    const byCode = new Map<string, { codigo: string; nombre: string; veces: number }>();
+    for (const q of this.quotations) {
+      if (q.estado === 'cancelada') continue;
+      for (const it of q.items ?? []) {
+        const key = (it.codigo || it.nombre).toUpperCase();
+        const prev = byCode.get(key);
+        const veces = it.cantidad > 0 ? it.cantidad : 1;
+        if (prev) {
+          prev.veces += veces;
+        } else {
+          byCode.set(key, { codigo: it.codigo, nombre: it.nombre, veces });
+        }
+      }
+    }
+    const total = Array.from(byCode.values()).reduce((s, p) => s + p.veces, 0);
+    this.productosMasCotizados = Array.from(byCode.values())
+      .sort((a, b) => b.veces - a.veces)
+      .slice(0, 10)
+      .map((p) => ({
+        nombre: p.nombre,
+        codigo: p.codigo,
+        vecesCotizado: p.veces,
+        porcentaje: total > 0 ? Math.round((p.veces / total) * 1000) / 10 : 0,
+      }));
+  }
+
+  private buildIvaResumen(): void {
+    const activas = this.quotations.filter((q) => q.estado !== 'cancelada');
+    const cerradas = this.quotations.filter(
+      (q) => q.estado === 'confirmada' || q.estado === 'cerrada',
+    );
+    const sum = (list: Quotation[], pick: (q: Quotation) => number) =>
+      Math.round(list.reduce((s, q) => s + pick(q), 0) * 100) / 100;
+    this.ivaResumen = {
+      cotizadas: activas.length,
+      montoConIva: sum(activas, (q) => q.totalConIva ?? q.total),
+      neto: sum(activas, (q) => q.neto ?? q.total),
+      iva: sum(activas, (q) => q.ivaMonto ?? 0),
+      cerradas: cerradas.length,
+      montoCerrado: sum(cerradas, (q) => q.totalConIva ?? q.total),
+      ivaCerrado: sum(cerradas, (q) => q.ivaMonto ?? 0),
+    };
+  }
+
+  private buildDescuentos(): void {
+    this.descuentos = this.quotations
+      .filter((q) => q.aprobacion && q.aprobacion !== 'no_requiere')
+      .map((q) => ({
+        codigo: q.codigo,
+        cliente: q.cliente,
+        porcentaje: q.descuentoPorcentaje,
+        motivo: q.descuentoMotivo?.trim() || '—',
+        aprobacion: q.aprobacion,
+        autorizadoPor: q.aprobadoPorNombre?.trim() || '—',
+      }));
+  }
+
+  aprobacionLabel(estado: ApprovalState): string {
+    const labels: Record<ApprovalState, string> = {
+      no_requiere: 'No requiere',
+      pendiente: 'Pendiente',
+      aprobada: 'Aprobada',
+      rechazada: 'Rechazada',
+    };
+    return labels[estado] ?? estado;
   }
 
   private buildVendedoresRanking(): void {
@@ -274,7 +406,9 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
     { id: 'productos-cotizados', title: 'Productos más cotizados' },
     { id: 'vendedores', title: 'Vendedores con más cotizaciones completadas' },
     { id: 'conversion', title: 'Conversión de cotizaciones' },
-    { id: 'ventas-periodo', title: 'Ventas por período' },
+    { id: 'ventas-periodo', title: 'Cotizaciones por período' },
+    { id: 'montos-iva', title: 'Montos e IVA interno' },
+    { id: 'descuentos-aprobacion', title: 'Descuentos solicitados, aprobados y rechazados' },
     { id: 'chatbot-faq', title: 'Chatbot - Preguntas más frecuentes' },
   ];
 
@@ -357,6 +491,8 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
       'descuento_porcentaje',
       'descuento_monto',
       'total_con_iva',
+      'neto',
+      'iva_monto',
       'aprobacion',
     ];
     const rows = this.quotations.map((q) =>
@@ -372,6 +508,8 @@ export class ReportsDashboardComponent implements OnInit, AfterViewChecked {
         q.descuentoPorcentaje,
         q.descuentoMonto,
         q.totalConIva,
+        q.neto,
+        q.ivaMonto,
         q.aprobacion,
       ]
         .map((v) => this.csvCell(String(v ?? '')))

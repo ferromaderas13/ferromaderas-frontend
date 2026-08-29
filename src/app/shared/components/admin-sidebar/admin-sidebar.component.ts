@@ -8,6 +8,7 @@ interface MenuItem {
   label: string;
   route: string;
   permission?: string;
+  roles?: string[];
 }
 
 const ALL_MENU_ITEMS: MenuItem[] = [
@@ -17,7 +18,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
   { label: 'Categorías', route: '/admin/categorias', permission: 'manage_categories' },
   { label: 'Destacados', route: '/admin/destacados', permission: 'manage_featured' },
   { label: 'Cotizaciones', route: '/admin/cotizaciones', permission: 'view_quotes' },
-  { label: 'Reportes', route: '/admin/reportes', permission: 'view_quotes' },
+  { label: 'Reportes', route: '/admin/reportes', roles: ['administrador', 'gerente'] },
   { label: 'Bitácora', route: '/admin/bitacora', permission: 'view_bitacora' },
   { label: 'Políticas', route: '/admin/politicas', permission: 'manage_policies' },
   { label: 'Chatbot', route: '/admin/chatbot', permission: 'manage_chatbot' },
@@ -44,6 +45,7 @@ export class AdminSidebarComponent implements OnInit, OnDestroy {
     const user = this.auth.currentUser();
     if (!user) return [];
     return ALL_MENU_ITEMS.filter((item) => {
+      if (item.roles?.length && !item.roles.includes(user.role)) return false;
       if (item.permission) return this.auth.hasPermission(item.permission);
       return true;
     });

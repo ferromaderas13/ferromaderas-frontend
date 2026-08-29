@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
-import { requirePermission } from './core/guards/permission.guard';
+import { requireAnyRole, requirePermission } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   {
@@ -94,7 +94,7 @@ export const routes: Routes = [
       },
       {
         path: 'reportes',
-        canActivate: [requirePermission('view_quotes')],
+        canActivate: [requireAnyRole(['administrador', 'gerente'])],
         loadComponent: () =>
           import('./features/admin/reports-dashboard/reports-dashboard.component').then(m => m.ReportsDashboardComponent),
       },

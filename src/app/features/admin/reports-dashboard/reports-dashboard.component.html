@@ -2,6 +2,17 @@
   <header class="reports-header">
     <h1>Dashboard de Reportes</h1>
     <div class="search-bar">
+      <label class="period-label">
+        Desde
+        <input type="date" class="search-input period-input" [(ngModel)]="filterDesde" (change)="applyPeriodFilter()" />
+      </label>
+      <label class="period-label">
+        Hasta
+        <input type="date" class="search-input period-input" [(ngModel)]="filterHasta" (change)="applyPeriodFilter()" />
+      </label>
+      <button type="button" class="search-btn" (click)="clearPeriodFilter()" *ngIf="filterDesde || filterHasta">
+        Quitar filtro
+      </button>
       <input
         type="search"
         class="search-input"
@@ -128,7 +139,7 @@
   <!-- Ventas por período -->
   <section id="ventas-periodo" class="report-section">
     <div class="section-header">
-      <h2>Ventas por período</h2>
+      <h2>Cotizaciones por período</h2>
       <button type="button" class="btn-pdf exclude-from-pdf" (click)="openPdfPreview('ventas-periodo')">
         Vista previa
       </button>
@@ -155,6 +166,82 @@
             <td>{{ v.mes }}</td>
             <td>Q{{ v.monto | number }}</td>
             <td>{{ v.cantidad }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Montos e IVA interno (control comercial, no factura) -->
+  <section id="montos-iva" class="report-section">
+    <div class="section-header">
+      <h2>Montos e IVA interno</h2>
+      <button type="button" class="btn-pdf exclude-from-pdf" (click)="openPdfPreview('montos-iva')">
+        Vista previa
+      </button>
+    </div>
+    <p class="empty-hint">
+      Los precios al cliente van con IVA incluido. Este desglose es interno (12%) y no sustituye a Di-Chara ni a facturación.
+    </p>
+    <div class="stats-row">
+      <div class="mini-stat">
+        <span class="mini-stat-label">Cotizaciones (sin canceladas)</span>
+        <span class="mini-stat-value">{{ ivaResumen.cotizadas }}</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-stat-label">Monto cotizado (Q)</span>
+        <span class="mini-stat-value">{{ ivaResumen.montoConIva | number:'1.2-2' }}</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-stat-label">Neto estimado (Q)</span>
+        <span class="mini-stat-value">{{ ivaResumen.neto | number:'1.2-2' }}</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-stat-label">IVA estimado (Q)</span>
+        <span class="mini-stat-value">{{ ivaResumen.iva | number:'1.2-2' }}</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-stat-label">Confirmadas/cerradas</span>
+        <span class="mini-stat-value">{{ ivaResumen.cerradas }}</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-stat-label">Monto cerrado (Q)</span>
+        <span class="mini-stat-value">{{ ivaResumen.montoCerrado | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- RC-02 Descuentos -->
+  <section id="descuentos-aprobacion" class="report-section">
+    <div class="section-header">
+      <h2>Descuentos solicitados, aprobados y rechazados</h2>
+      <button type="button" class="btn-pdf exclude-from-pdf" (click)="openPdfPreview('descuentos-aprobacion')">
+        Vista previa
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Cliente</th>
+            <th>%</th>
+            <th>Motivo</th>
+            <th>Estado</th>
+            <th>Autorizó</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="descuentos.length === 0">
+            <td colspan="6" class="empty-row">No hay solicitudes de descuento en el período.</td>
+          </tr>
+          <tr *ngFor="let d of descuentos">
+            <td>{{ d.codigo }}</td>
+            <td>{{ d.cliente }}</td>
+            <td>{{ d.porcentaje | number:'1.0-2' }}%</td>
+            <td>{{ d.motivo }}</td>
+            <td>{{ aprobacionLabel(d.aprobacion) }}</td>
+            <td>{{ d.autorizadoPor }}</td>
           </tr>
         </tbody>
       </table>

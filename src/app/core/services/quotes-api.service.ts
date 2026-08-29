@@ -61,7 +61,10 @@ export interface Quote {
 }
 
 /** Tipos de alerta de seguimiento comercial (panel admin). */
-export type FollowUpAlertType = 'nueva_sin_vendedor' | 'descuento_pendiente';
+export type FollowUpAlertType =
+  | 'nueva_sin_vendedor'
+  | 'descuento_pendiente'
+  | 'sin_movimiento';
 
 export interface SeguimientoEntry {
   id: string;
@@ -90,6 +93,7 @@ export interface FollowUpAlertsResponse {
     nuevasSinVendedor: number;
     enSeguimiento: number;
     descuentosPendientes: number;
+    sinMovimiento: number;
     totalPendientes: number;
   };
   alertas: FollowUpAlertItem[];

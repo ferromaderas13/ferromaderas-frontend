@@ -21,6 +21,10 @@
             <span class="alert-stat-value">{{ data.resumen.descuentosPendientes }}</span>
             <span class="alert-stat-label">Descuentos pendientes</span>
           </div>
+          <div class="alert-stat" [class.has-items]="(data.resumen.sinMovimiento ?? 0) > 0">
+            <span class="alert-stat-value">{{ data.resumen.sinMovimiento ?? 0 }}</span>
+            <span class="alert-stat-label">Sin movimiento (3+ días)</span>
+          </div>
           <div class="alert-stat">
             <span class="alert-stat-value">{{ data.resumen.enSeguimiento }}</span>
             <span class="alert-stat-label">En seguimiento</span>
@@ -34,7 +38,11 @@
             @for (a of data.alertas; track a.id) {
               <div class="alert-row" [class.prioridad-alta]="a.prioridad === 'alta'">
                 <div class="alert-main">
-                  <span class="alert-badge" [class.badge-descuento]="a.tipo === 'descuento_pendiente'">
+                  <span
+                    class="alert-badge"
+                    [class.badge-descuento]="a.tipo === 'descuento_pendiente'"
+                    [class.badge-atraso]="a.tipo === 'sin_movimiento'"
+                  >
                     {{ alertLabel(a.tipo) }}
                   </span>
                   <strong class="alert-codigo">{{ a.codigo }}</strong>

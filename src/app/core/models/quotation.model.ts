@@ -43,4 +43,7 @@ export interface Quotation {
   /** Vendedor asignado para dar seguimiento */
   vendedorId?: string;
   vendedorNombre?: string;
+  /** ISO de creación (filtros de período en reportes). */
+  createdAt?: string;
+  items?: { codigo: string; nombre: string; cantidad: number }[];
 }

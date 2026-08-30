@@ -194,10 +194,7 @@ export class DashboardComponent implements OnInit {
     this.vistasPagina = data.vistasPagina;
     this.paginasSesion = data.paginasSesion;
     this.rebotePorcentaje = data.rebotePorcentaje;
-    this.paginasMasVisitadas = data.paginasMasVisitadas.map((p) => ({
-      pagina: this.friendlyPage(p.pagina),
-      vistas: p.vistas,
-    }));
+    this.paginasMasVisitadas = data.paginasMasVisitadas;
     this.maxPaginasVistas = Math.max(0, ...this.paginasMasVisitadas.map((p) => p.vistas));
 
     const origen = data.visitasPorOrigen ?? [];
@@ -332,14 +329,6 @@ export class DashboardComponent implements OnInit {
     }
 
     this.insights = items.slice(0, 3);
-  }
-
-  private friendlyPage(title: string): string {
-    const cleaned = title
-      .replace(/\s*[|–-]\s*FerroMaderas.*$/i, '')
-      .replace(/^FerroMaderas\s*[|–-]\s*/i, '')
-      .trim();
-    return cleaned || title;
   }
 
   private formatDateLabel(yyyymmdd: string): string {

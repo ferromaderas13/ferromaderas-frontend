@@ -7,6 +7,7 @@ import { AppMessagesComponent } from '../../shared/components/app-messages/app-m
 import { ChatbotComponent } from '../../shared/components/chatbot/chatbot.component';
 import { CartService } from '../../core/services/cart.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
+import { catalogPageLabel } from '../../core/utils/catalog-page-label';
 
 @Component({
   selector: 'app-public-layout',
@@ -27,7 +28,10 @@ export class PublicLayoutComponent implements OnInit, OnDestroy {
     this.navSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
-        this.analytics.pageView(e.urlAfterRedirects, document.title);
+        const path = e.urlAfterRedirects.split('?')[0] || '/';
+        const label = catalogPageLabel(path);
+        document.title = `${label} | FerroMaderas`;
+        this.analytics.pageView(path, label);
       });
   }
 

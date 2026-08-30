@@ -9,13 +9,19 @@ import {
   DashboardStats,
 } from '../../../core/services/statistics.service';
 import { FollowUpAlertsService } from '../../../core/services/follow-up-alerts.service';
-import { FollowUpAlertItem } from '../../../core/services/quotes-api.service';
+import {
+  FollowUpAlertItem,
+  Quote,
+  QuotesApiService,
+} from '../../../core/services/quotes-api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { catchError, forkJoin, of } from 'rxjs';
 import {
   MAP_H,
   MAP_W,
   MapMarker,
   SUCURSAL,
+  foldName,
   guatemalaPath,
   markersFromOrigins,
   rankExtranjero,
@@ -49,9 +55,23 @@ export class DashboardComponent implements OnInit {
   rankingGt: { label: string; visitas: number }[] = [];
   rankingExt: { label: string; visitas: number }[] = [];
   hovered: MapMarker | null = null;
+  celularPct = 0;
+  amatitlanPct = 0;
+  visitasLocales = 0;
+
+  cotizaciones30 = 0;
+  montoPipeline = 0;
+  montoCerrado30 = 0;
+  ticketPromedio = 0;
+  conversionPct: number | null = null;
+  topProductos: { codigo: string; nombre: string; vecesCotizado: number; porcentaje: number }[] =
+    [];
+  comercialListo = false;
+  insights: { kicker: string; texto: string }[] = [];
 
   private readonly followUpAlerts = inject(FollowUpAlertsService);
   private readonly auth = inject(AuthService);
+  private readonly quotesApi = inject(QuotesApiService);
 
   readonly canViewQuotes = () => this.auth.hasPermission('view_quotes');
   readonly alertsLoading = this.followUpAlerts.loading;
@@ -146,6 +166,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     if (this.canViewQuotes()) {
       this.followUpAlerts.refresh();
+      this.loadCommercial();
     }
     this.statistics.getDashboard().subscribe({
       next: (data) => this.applyDashboardData(data),
@@ -173,13 +194,22 @@ export class DashboardComponent implements OnInit {
     this.vistasPagina = data.vistasPagina;
     this.paginasSesion = data.paginasSesion;
     this.rebotePorcentaje = data.rebotePorcentaje;
-    this.paginasMasVisitadas = data.paginasMasVisitadas;
-    this.maxPaginasVistas = Math.max(0, ...data.paginasMasVisitadas.map((p) => p.vistas));
+    this.paginasMasVisitadas = data.paginasMasVisitadas.map((p) => ({
+      pagina: this.friendlyPage(p.pagina),
+      vistas: p.vistas,
+    }));
+    this.maxPaginasVistas = Math.max(0, ...this.paginasMasVisitadas.map((p) => p.vistas));
 
     const origen = data.visitasPorOrigen ?? [];
     this.mapaMarcadores = markersFromOrigins(origen);
     this.rankingGt = rankGuatemala(origen).slice(0, 8);
     this.rankingExt = rankExtranjero(origen).slice(0, 4);
+    this.visitasLocales = this.rankingGt.reduce((sum, c) => sum + c.visitas, 0);
+    const amatitlan = this.rankingGt.find((c) => foldName(c.label).includes('amatitlan'));
+    this.amatitlanPct =
+      this.visitasTotales > 0 && amatitlan
+        ? Math.round((amatitlan.visitas / this.visitasTotales) * 100)
+        : 0;
 
     this.barChartData = {
       ...this.barChartData,
@@ -204,6 +234,8 @@ export class DashboardComponent implements OnInit {
         },
       ],
     };
+    this.celularPct =
+      data.dispositivos.find((d) => /celular|m[oó]vil/i.test(d.device))?.percentage ?? 0;
 
     this.lineChartData = {
       ...this.lineChartData,
@@ -217,6 +249,97 @@ export class DashboardComponent implements OnInit {
     };
 
     this.loading = false;
+    this.refreshInsights();
+  }
+
+  private loadCommercial(): void {
+    forkJoin({
+      quotes: this.quotesApi.list().pipe(catchError(() => of([] as Quote[]))),
+      productos: this.quotesApi
+        .getTopQuotedProducts()
+        .pipe(catchError(() => of([]))),
+    }).subscribe(({ quotes, productos }) => {
+      const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const recientes = quotes.filter((q) => {
+        const t = new Date(q.createdAt).getTime();
+        return !Number.isNaN(t) && t >= since;
+      });
+      this.cotizaciones30 = recientes.length;
+
+      const abiertas = recientes.filter((q) =>
+        q.estado === 'nueva' || q.estado === 'en_seguimiento' || q.estado === 'confirmada',
+      );
+      const cerradas = recientes.filter((q) => q.estado === 'cerrada');
+      const money = (q: Quote) => q.totalConIva || q.total || 0;
+      this.montoPipeline = Math.round(abiertas.reduce((sum, q) => sum + money(q), 0));
+      this.montoCerrado30 = Math.round(cerradas.reduce((sum, q) => sum + money(q), 0));
+      this.ticketPromedio =
+        recientes.length > 0
+          ? Math.round(recientes.reduce((sum, q) => sum + money(q), 0) / recientes.length)
+          : 0;
+      this.topProductos = productos.slice(0, 5);
+      this.comercialListo = true;
+      this.refreshInsights();
+    });
+  }
+
+  private refreshInsights(): void {
+    const items: { kicker: string; texto: string }[] = [];
+
+    if (this.amatitlanPct >= 40) {
+      items.push({
+        kicker: 'Mercado de la sucursal',
+        texto: `${this.amatitlanPct}% de las visitas al catálogo salen de Amatitlán. El sitio está llegando a la zona de la ferretería.`,
+      });
+    } else if (this.visitasTotales > 0 && this.rankingGt[0]) {
+      items.push({
+        kicker: 'Oportunidad de zona',
+        texto: `Hoy lidera ${this.rankingGt[0].label}. Conviene que ventas dé seguimiento a esa plaza.`,
+      });
+    }
+
+    if (this.paginasSesion >= 8) {
+      items.push({
+        kicker: 'Están comparando materiales',
+        texto: `Cada visita abre ${this.paginasSesion.toFixed(1)} páginas. No es un clic suelto: recorren el catálogo antes de cotizar.`,
+      });
+    } else if (this.rebotePorcentaje >= 50) {
+      items.push({
+        kicker: 'Se van rápido',
+        texto: `El ${this.rebotePorcentaje}% entra y no sigue. Revisá que el inicio muestre precios y WhatsApp a la vista.`,
+      });
+    }
+
+    if (this.comercialListo && this.visitasTotales > 0) {
+      const raw = Math.round((this.cotizaciones30 / this.visitasTotales) * 100);
+      this.conversionPct = raw;
+      if (raw > 100) {
+        items.push({
+          kicker: 'Cotizan también fuera del sitio',
+          texto: `${this.cotizaciones30} cotizaciones vs ${this.visitasTotales} visitas web. Parte del pedido entra por mostrador o WhatsApp, no solo por el catálogo.`,
+        });
+      } else {
+        items.push({
+          kicker: 'Del catálogo a la cotización',
+          texto: `De cada 100 visitas, ${raw} terminan en cotización. Ticket promedio: Q${this.ticketPromedio.toLocaleString('es-GT')}.`,
+        });
+      }
+    } else if (this.celularPct >= 45) {
+      items.push({
+        kicker: 'Entran del celular',
+        texto: `${this.celularPct}% navega con el teléfono. El vendedor debería contestar rápido por WhatsApp.`,
+      });
+    }
+
+    this.insights = items.slice(0, 3);
+  }
+
+  private friendlyPage(title: string): string {
+    const cleaned = title
+      .replace(/\s*[|–-]\s*FerroMaderas.*$/i, '')
+      .replace(/^FerroMaderas\s*[|–-]\s*/i, '')
+      .trim();
+    return cleaned || title;
   }
 
   private formatDateLabel(yyyymmdd: string): string {

@@ -158,21 +158,43 @@ export function guatemalaPath(): string {
 export function displayPlace(ciudad: string, departamento: string): string {
   const city = foldName(ciudad);
   if (!city || city === '(not set)' || city === 'not set') {
-    return departamento && foldName(departamento) !== '(not set)'
-      ? departamento
-      : 'Sin ubicar';
+    return cleanRegion(departamento) || 'Sin ubicar';
+  }
+  if (city.endsWith(' department')) {
+    return cleanRegion(ciudad.replace(/\s*department$/i, ''));
   }
   if (city === 'guatemala city' || city === 'guatemala') return 'Ciudad de Guatemala';
   return ciudad;
 }
+
+function cleanRegion(value: string): string {
+  const folded = foldName(value);
+  if (!folded || folded === '(not set)' || folded === 'not set') return '';
+  if (folded === 'guatemala' || folded === 'guatemala department') return 'Dept. Guatemala';
+  return value.replace(/\s*department$/i, '').trim();
+}
+
+const COUNTRY_ES: Record<string, string> = {
+  'united states': 'Estados Unidos',
+  'usa': 'Estados Unidos',
+  netherlands: 'Países Bajos',
+  mexico: 'México',
+  'el salvador': 'El Salvador',
+  honduras: 'Honduras',
+  belize: 'Belice',
+  spain: 'España',
+  canada: 'Canadá',
+};
 
 function coordsFor(origin: VisitOrigin): { lat: number; lng: number } | null {
   const city = foldName(origin.ciudad);
   if (city && city !== '(not set)' && city !== 'not set' && CITY_COORDS[city]) {
     return CITY_COORDS[city];
   }
-  const dept = foldName(origin.departamento);
-  if (dept && DEPT_COORDS[dept]) return DEPT_COORDS[dept];
+  const deptRaw = foldName(origin.departamento).replace(/ department$/, '');
+  if (deptRaw && DEPT_COORDS[deptRaw]) return DEPT_COORDS[deptRaw];
+  const cityDept = city.replace(/ department$/, '');
+  if (cityDept && DEPT_COORDS[cityDept]) return DEPT_COORDS[cityDept];
   return null;
 }
 
@@ -219,7 +241,7 @@ export function rankGuatemala(origins: VisitOrigin[]): { label: string; visitas:
 export function rankExtranjero(origins: VisitOrigin[]): { label: string; visitas: number }[] {
   const map = new Map<string, number>();
   for (const origin of origins.filter((o) => !isGuatemala(o.pais))) {
-    const label = origin.pais || 'Otro país';
+    const label = COUNTRY_ES[foldName(origin.pais)] || origin.pais || 'Otro país';
     map.set(label, (map.get(label) ?? 0) + origin.visitas);
   }
   return [...map.entries()]

@@ -67,8 +67,8 @@
       <p class="web-kicker">Catálogo en línea</p>
       <h1 class="dashboard-title">¿Quién está viendo FerroMaderas?</h1>
       <p class="web-lead">
-        Visitas reales al sitio, últimos 30 días. Sirve para ver de qué municipios llega gente y
-        cómo recorre el catálogo.
+        Tráfico del catálogo cruzado con cotizaciones de los últimos 30 días: de qué municipio llega
+        gente, cuánto pide y qué materiales mueve.
       </p>
     </div>
     @if (dataSource === 'ga4') {
@@ -118,6 +118,49 @@
       </article>
     </div>
 
+    @if (canViewQuotes() && comercialListo) {
+      <p class="block-label">Negocio · últimos 30 días</p>
+      <div class="kpi-grid biz-grid">
+        <article class="kpi-card biz">
+          <p class="kpi-label">Cotizaciones</p>
+          <p class="kpi-value">{{ cotizaciones30 | number }}</p>
+          <p class="kpi-hint">Pedidos armados en el sistema</p>
+        </article>
+        <article class="kpi-card biz">
+          <p class="kpi-label">En negociación</p>
+          <p class="kpi-value">Q{{ montoPipeline | number:'1.0-0' }}</p>
+          <p class="kpi-hint">Nuevas, seguimiento y confirmadas</p>
+        </article>
+        <article class="kpi-card biz">
+          <p class="kpi-label">Cerrado</p>
+          <p class="kpi-value">Q{{ montoCerrado30 | number:'1.0-0' }}</p>
+          <p class="kpi-hint">Cotizaciones marcadas como cerradas</p>
+        </article>
+        <article class="kpi-card biz">
+          <p class="kpi-label">Ticket promedio</p>
+          <p class="kpi-value">Q{{ ticketPromedio | number:'1.0-0' }}</p>
+          <p class="kpi-hint">
+            @if (conversionPct !== null && conversionPct <= 100) {
+              {{ conversionPct }}% de las visitas pide cotización
+            } @else {
+              Valor medio por cotización
+            }
+          </p>
+        </article>
+      </div>
+    }
+
+    @if (insights.length > 0) {
+      <div class="insight-row">
+        @for (ins of insights; track ins.kicker) {
+          <article class="insight-card">
+            <p class="insight-kicker">{{ ins.kicker }}</p>
+            <p class="insight-text">{{ ins.texto }}</p>
+          </article>
+        }
+      </div>
+    }
+
     <section class="map-panel">
       <div class="map-canvas">
         <svg
@@ -166,10 +209,21 @@
       </div>
 
       <div class="map-copy">
-        <h2>De dónde nos visitan</h2>
+        <h2>
+          @if (amatitlanPct >= 40) {
+            {{ amatitlanPct }}% entra desde Amatitlán
+          } @else {
+            De dónde nos visitan
+          }
+        </h2>
         <p>
-          Cada círculo es una ciudad de Guatemala. Entre más grande, más gente abrió el catálogo
-          desde ahí. La estrella marca la sucursal en Amatitlán.
+          @if (amatitlanPct >= 40) {
+            El catálogo está pegado al mercado de la sucursal. El círculo grande es donde más
+            gente abre el sitio; la estrella es FerroMaderas en Amatitlán.
+          } @else {
+            Cada círculo es una ciudad. Entre más grande, más gente abrió el catálogo. La estrella
+            marca la sucursal.
+          }
         </p>
         <ol class="city-rank">
           @for (c of rankingGt; track c.label; let i = $index) {
@@ -199,6 +253,48 @@
 
     <div class="chart-row">
       <div class="chart-container">
+        <h3 class="section-title">Qué están cotizando</h3>
+        <p class="section-hint">Materiales que más piden en las cotizaciones ·
+          <a routerLink="/admin/reportes">Ver reportes</a>
+        </p>
+        @if (topProductos.length === 0) {
+          <p class="map-empty" style="color:#64748b">Aún no hay suficientes líneas de cotización.</p>
+        } @else {
+          <div class="pages-table">
+            @for (p of topProductos; track p.codigo) {
+              <div class="page-row">
+                <span class="page-name">{{ p.nombre }}</span>
+                <span class="page-bar-wrap">
+                  <span class="page-bar biz-bar" [style.width.%]="p.porcentaje"></span>
+                </span>
+                <span class="page-n">{{ p.vecesCotizado }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <div class="chart-container chart-half">
+        <h3 class="section-title">Desde qué aparato</h3>
+        <p class="section-hint">
+          @if (celularPct >= 45) {
+            {{ celularPct }}% entra del celular: conviene responder por WhatsApp
+          } @else {
+            Celular, computadora o tablet
+          }
+        </p>
+        <div class="chart-wrapper chart-doughnut">
+          <canvas
+            baseChart
+            [type]="doughnutChartType"
+            [data]="doughnutChartData"
+            [options]="doughnutChartOptions">
+          </canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-container">
         <h3 class="section-title">Visitas de esta semana</h3>
         <p class="section-hint">Cuánta gente entra cada día al catálogo</p>
         <div class="chart-wrapper">
@@ -210,16 +306,23 @@
           </canvas>
         </div>
       </div>
-      <div class="chart-container chart-half">
-        <h3 class="section-title">Desde qué aparato</h3>
-        <p class="section-hint">Celular, computadora o tablet</p>
-        <div class="chart-wrapper chart-doughnut">
-          <canvas
-            baseChart
-            [type]="doughnutChartType"
-            [data]="doughnutChartData"
-            [options]="doughnutChartOptions">
-          </canvas>
+      <div class="chart-container">
+        <h3 class="section-title">Qué páginas miran más</h3>
+        <p class="section-hint">Por dónde se detiene la gente en el sitio</p>
+        <div class="pages-table">
+          <div class="page-row header">
+            <span>Página</span>
+            <span>Vistas</span>
+          </div>
+          @for (p of paginasMasVisitadas; track p.pagina) {
+            <div class="page-row">
+              <span class="page-name">{{ p.pagina }}</span>
+              <span class="page-bar-wrap">
+                <span class="page-bar" [style.width]="pageBarWidth(p.vistas)"></span>
+              </span>
+              <span class="page-n">{{ p.vistas | number }}</span>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -234,26 +337,6 @@
           [data]="lineChartData"
           [options]="lineChartOptions">
         </canvas>
-      </div>
-    </div>
-
-    <div class="chart-container">
-      <h3 class="section-title">Qué páginas miran más</h3>
-      <p class="section-hint">Por dónde se detiene la gente en el sitio</p>
-      <div class="pages-table">
-        <div class="page-row header">
-          <span>Página</span>
-          <span>Vistas</span>
-        </div>
-        @for (p of paginasMasVisitadas; track p.pagina) {
-          <div class="page-row">
-            <span class="page-name">{{ p.pagina }}</span>
-            <span class="page-bar-wrap">
-              <span class="page-bar" [style.width]="pageBarWidth(p.vistas)"></span>
-            </span>
-            <span class="page-n">{{ p.vistas | number }}</span>
-          </div>
-        }
       </div>
     </div>
   }

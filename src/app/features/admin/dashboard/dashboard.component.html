@@ -21,8 +21,8 @@
             <span class="alert-stat-value">{{ data.resumen.descuentosPendientes }}</span>
             <span class="alert-stat-label">Descuentos pendientes</span>
           </div>
-          <div class="alert-stat" [class.has-items]="(data.resumen.sinMovimiento ?? 0) > 0">
-            <span class="alert-stat-value">{{ data.resumen.sinMovimiento ?? 0 }}</span>
+          <div class="alert-stat" [class.has-items]="data.resumen.sinMovimiento > 0">
+            <span class="alert-stat-value">{{ data.resumen.sinMovimiento }}</span>
             <span class="alert-stat-label">Sin movimiento (3+ días)</span>
           </div>
           <div class="alert-stat">

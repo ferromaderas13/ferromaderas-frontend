@@ -3,6 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+export interface VisitOrigin {
+  pais: string;
+  departamento: string;
+  ciudad: string;
+  visitas: number;
+}
+
 export interface DashboardStats {
   visitasTotales: number;
   vistasPagina: number;
@@ -12,6 +19,7 @@ export interface DashboardStats {
   visitasPorDia: { date: string; visits: number }[];
   dispositivos: { device: string; percentage: number }[];
   traficoMensual: { month: string; visits: number }[];
+  visitasPorOrigen?: VisitOrigin[];
   dataSource?: 'ga4' | 'mock' | 'error';
 }
 

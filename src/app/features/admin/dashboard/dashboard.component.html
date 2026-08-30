@@ -62,19 +62,27 @@
     </section>
   }
 
-  <h1 class="dashboard-title">Estadísticas del sitio web</h1>
-
-  @if (dataSource === 'ga4') {
-    <div class="data-source-banner live">
-      Conectado a Google Analytics 4.
+  <header class="web-stats-header">
+    <div>
+      <p class="web-kicker">Catálogo en línea</p>
+      <h1 class="dashboard-title">¿Quién está viendo FerroMaderas?</h1>
+      <p class="web-lead">
+        Visitas reales al sitio, últimos 30 días. Sirve para ver de qué municipios llega gente y
+        cómo recorre el catálogo.
+      </p>
     </div>
-  } @else if (dataSource === 'error') {
+    @if (dataSource === 'ga4') {
+      <span class="live-pill">En vivo · Google Analytics</span>
+    }
+  </header>
+
+  @if (dataSource === 'error') {
     <div class="data-source-banner mock">
       GA4 está configurado en el backend, pero no se pudieron leer los reportes (credenciales o permisos).
       El sitio sí registra visitas con GTM. Los indicadores comerciales están en
       <a routerLink="/admin/reportes">Reportes</a>.
     </div>
-  } @else {
+  } @else if (dataSource !== 'ga4') {
     <div class="data-source-banner mock">
       El sitio ya registra visitas con GTM. Para ver esos números aquí hace falta
       GA4_PROPERTY_ID y GA4_SERVICE_ACCOUNT_JSON en Railway. Los indicadores comerciales del negocio están en
@@ -87,71 +95,166 @@
   } @else if (dataSource === 'ga4' && error) {
     <p class="error-message">{{ error }}</p>
   } @else if (dataSource === 'ga4') {
-  <div class="stats-grid">
-    <div class="stat-card">
-      <h3 class="stat-title">Visitas totales</h3>
-      <p class="stat-value">{{ visitasTotales | number }}</p>
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <p class="kpi-label">Visitas</p>
+        <p class="kpi-value">{{ visitasTotales | number }}</p>
+        <p class="kpi-hint">Personas que entraron al catálogo</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Páginas vistas</p>
+        <p class="kpi-value">{{ vistasPagina | number }}</p>
+        <p class="kpi-hint">Pantallas que abrieron en total</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Recorrido</p>
+        <p class="kpi-value">{{ paginasSesion | number:'1.1-1' }}</p>
+        <p class="kpi-hint">Páginas por cada visita</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Se fueron rápido</p>
+        <p class="kpi-value">{{ rebotePorcentaje }}%</p>
+        <p class="kpi-hint">Entraron y no siguieron navegando</p>
+      </article>
     </div>
-    <div class="stat-card">
-      <h3 class="stat-title">Vistas de página</h3>
-      <p class="stat-value">{{ vistasPagina | number }}</p>
-    </div>
-    <div class="stat-card">
-      <h3 class="stat-title">Páginas por sesión</h3>
-      <p class="stat-value">{{ paginasSesion }}</p>
-    </div>
-    <div class="stat-card">
-      <h3 class="stat-title">Tasa de rebote</h3>
-      <p class="stat-value">{{ rebotePorcentaje }}%</p>
-    </div>
-  </div>
 
-  <div class="chart-row">
+    <section class="map-panel">
+      <div class="map-canvas">
+        <svg
+          class="gt-map"
+          [attr.viewBox]="'0 0 ' + mapW + ' ' + mapH"
+          role="img"
+          aria-label="Mapa de visitas en Guatemala"
+        >
+          <rect width="100%" height="100%" fill="transparent"></rect>
+          <text class="map-neighbor" x="28" y="36">México</text>
+          <text class="map-neighbor" x="268" y="52">Belice</text>
+          <text class="map-neighbor" x="286" y="248">Honduras</text>
+          <text class="map-neighbor" x="168" y="418">El Salvador</text>
+          <path class="gt-land" [attr.d]="mapaPath"></path>
+          @for (m of mapaMarcadores; track m.key; let last = $last) {
+            <circle
+              class="visit-dot"
+              [class.is-hot]="hovered?.key === m.key"
+              [class.is-top]="last"
+              [attr.cx]="m.x"
+              [attr.cy]="m.y"
+              [attr.r]="m.r"
+              (mouseenter)="hovered = m"
+              (mouseleave)="hovered = null"
+            ></circle>
+          }
+          <g class="sucursal-pin" [attr.transform]="'translate(' + sucursal.x + ' ' + sucursal.y + ')'">
+            <polygon points="0,-11 3.2,-3.2 11,-3.2 4.6,1.6 7,9.5 0,5 -7,9.5 -4.6,1.6 -11,-3.2 -3.2,-3.2"></polygon>
+          </g>
+        </svg>
+        @if (hovered) {
+          <div class="map-tooltip">
+            <strong>{{ hovered.label }}</strong>
+            <span>{{ hovered.visitas | number }} visitas</span>
+          </div>
+        } @else {
+          <div class="map-tooltip muted">
+            <strong>{{ sucursal.label }}</strong>
+            <span>{{ sucursal.detalle }}</span>
+          </div>
+        }
+        <div class="map-legend">
+          <span><i class="lg-dot"></i> Visitas</span>
+          <span><i class="lg-star"></i> Sucursal</span>
+        </div>
+      </div>
+
+      <div class="map-copy">
+        <h2>De dónde nos visitan</h2>
+        <p>
+          Cada círculo es una ciudad de Guatemala. Entre más grande, más gente abrió el catálogo
+          desde ahí. La estrella marca la sucursal en Amatitlán.
+        </p>
+        <ol class="city-rank">
+          @for (c of rankingGt; track c.label; let i = $index) {
+            <li>
+              <span class="rank-pos">{{ i + 1 }}</span>
+              <span class="rank-name">{{ c.label }}</span>
+              <span class="rank-bar-wrap">
+                <span class="rank-bar" [style.width]="rankShare(c.visitas)"></span>
+              </span>
+              <span class="rank-n">{{ c.visitas | number }}</span>
+            </li>
+          }
+        </ol>
+        @if (rankingGt.length === 0) {
+          <p class="map-empty">Todavía no hay ciudades con visitas suficientes para ubicarlas.</p>
+        }
+        @if (rankingExt.length > 0) {
+          <p class="ext-title">También nos vieron desde</p>
+          <ul class="ext-list">
+            @for (e of rankingExt; track e.label) {
+              <li>{{ e.label }} · {{ e.visitas | number }}</li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+
+    <div class="chart-row">
+      <div class="chart-container">
+        <h3 class="section-title">Visitas de esta semana</h3>
+        <p class="section-hint">Cuánta gente entra cada día al catálogo</p>
+        <div class="chart-wrapper">
+          <canvas
+            baseChart
+            [type]="barChartType"
+            [data]="barChartData"
+            [options]="barChartOptions">
+          </canvas>
+        </div>
+      </div>
+      <div class="chart-container chart-half">
+        <h3 class="section-title">Desde qué aparato</h3>
+        <p class="section-hint">Celular, computadora o tablet</p>
+        <div class="chart-wrapper chart-doughnut">
+          <canvas
+            baseChart
+            [type]="doughnutChartType"
+            [data]="doughnutChartData"
+            [options]="doughnutChartOptions">
+          </canvas>
+        </div>
+      </div>
+    </div>
+
     <div class="chart-container">
-      <div class="chart-wrapper" style="height: 220px;">
+      <h3 class="section-title">Tendencia del año</h3>
+      <p class="section-hint">Si el catálogo se está viendo más o menos mes a mes</p>
+      <div class="chart-wrapper chart-line">
         <canvas
           baseChart
-          [type]="barChartType"
-          [data]="barChartData"
-          [options]="barChartOptions">
+          [type]="lineChartType"
+          [data]="lineChartData"
+          [options]="lineChartOptions">
         </canvas>
       </div>
     </div>
-    <div class="chart-container chart-half">
-      <div class="chart-wrapper chart-doughnut" style="height: 220px;">
-        <canvas
-          baseChart
-          [type]="doughnutChartType"
-          [data]="doughnutChartData"
-          [options]="doughnutChartOptions">
-        </canvas>
-      </div>
-    </div>
-  </div>
 
-  <div class="chart-container">
-    <div class="chart-wrapper chart-line" style="height: 220px;">
-      <canvas
-        baseChart
-        [type]="lineChartType"
-        [data]="lineChartData"
-        [options]="lineChartOptions">
-      </canvas>
-    </div>
-  </div>
-
-  <div class="chart-container">
-    <h3 class="section-title">Páginas más visitadas</h3>
-    <div class="pages-table">
-      <div class="page-row header">
-        <span>Página</span>
-        <span>Vistas</span>
-      </div>
-      <div class="page-row" *ngFor="let p of paginasMasVisitadas">
-        <span>{{ p.pagina }}</span>
-        <span>{{ p.vistas | number }}</span>
+    <div class="chart-container">
+      <h3 class="section-title">Qué páginas miran más</h3>
+      <p class="section-hint">Por dónde se detiene la gente en el sitio</p>
+      <div class="pages-table">
+        <div class="page-row header">
+          <span>Página</span>
+          <span>Vistas</span>
+        </div>
+        @for (p of paginasMasVisitadas; track p.pagina) {
+          <div class="page-row">
+            <span class="page-name">{{ p.pagina }}</span>
+            <span class="page-bar-wrap">
+              <span class="page-bar" [style.width]="pageBarWidth(p.vistas)"></span>
+            </span>
+            <span class="page-n">{{ p.vistas | number }}</span>
+          </div>
+        }
       </div>
     </div>
-  </div>
   }
 </div>

@@ -4,10 +4,23 @@ import { RouterLink } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
-import { StatisticsService } from '../../../core/services/statistics.service';
+import {
+  StatisticsService,
+  DashboardStats,
+} from '../../../core/services/statistics.service';
 import { FollowUpAlertsService } from '../../../core/services/follow-up-alerts.service';
 import { FollowUpAlertItem } from '../../../core/services/quotes-api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import {
+  MAP_H,
+  MAP_W,
+  MapMarker,
+  SUCURSAL,
+  guatemalaPath,
+  markersFromOrigins,
+  rankExtranjero,
+  rankGuatemala,
+} from './dashboard-geo';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,18 +30,25 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
-  /** Estadísticas del sitio web */
   visitasTotales = 0;
   vistasPagina = 0;
   paginasSesion = 0;
   rebotePorcentaje = 0;
-
-  /** Páginas más visitadas */
   paginasMasVisitadas: { pagina: string; vistas: number }[] = [];
+  maxPaginasVistas = 0;
 
   loading = true;
   error: string | null = null;
   dataSource: 'ga4' | 'mock' | 'error' = 'mock';
+
+  readonly mapW = MAP_W;
+  readonly mapH = MAP_H;
+  readonly mapaPath = guatemalaPath();
+  readonly sucursal = SUCURSAL;
+  mapaMarcadores: MapMarker[] = [];
+  rankingGt: { label: string; visitas: number }[] = [];
+  rankingExt: { label: string; visitas: number }[] = [];
+  hovered: MapMarker | null = null;
 
   private readonly followUpAlerts = inject(FollowUpAlertsService);
   private readonly auth = inject(AuthService);
@@ -37,7 +57,6 @@ export class DashboardComponent implements OnInit {
   readonly alertsLoading = this.followUpAlerts.loading;
   readonly alertsData = this.followUpAlerts.data;
 
-  /** Gráfico: Visitas por día (última semana) */
   public barChartType: ChartType = 'bar';
   public barChartData: ChartData<'bar'> = {
     labels: [],
@@ -46,8 +65,8 @@ export class DashboardComponent implements OnInit {
         data: [],
         label: 'Visitas',
         backgroundColor: '#1e3a8a',
-        borderColor: '#1e40af',
-        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
       },
     ],
   };
@@ -57,26 +76,22 @@ export class DashboardComponent implements OnInit {
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      title: {
-        display: true,
-        text: 'Visitas por día (última semana)',
-        font: { size: 14 },
-      },
+      title: { display: false },
     },
     scales: {
-      y: { beginAtZero: true },
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: '#eef2ff' }, ticks: { precision: 0 } },
     },
   };
 
-  /** Gráfico: Dispositivos */
   public doughnutChartType: ChartType = 'doughnut';
   public doughnutChartData: ChartData<'doughnut'> = {
     labels: [],
     datasets: [
       {
         data: [],
-        backgroundColor: ['#1e3a8a', '#3b82f6', '#93c5fd'],
-        borderWidth: 2,
+        backgroundColor: ['#1e3a8a', '#f59e0b', '#93c5fd'],
+        borderWidth: 3,
         borderColor: '#ffffff',
       },
     ],
@@ -85,21 +100,17 @@ export class DashboardComponent implements OnInit {
   public doughnutChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: '68%',
     plugins: {
       legend: {
         display: true,
         position: 'right',
-        labels: { usePointStyle: true, padding: 15 },
+        labels: { usePointStyle: true, padding: 16, font: { size: 12 } },
       },
-      title: {
-        display: true,
-        text: 'Dispositivos de acceso',
-        font: { size: 12 },
-      },
+      title: { display: false },
     },
   };
 
-  /** Gráfico: Tráfico por mes */
   public lineChartType: ChartType = 'line';
   public lineChartData: ChartData<'line'> = {
     labels: [],
@@ -108,7 +119,10 @@ export class DashboardComponent implements OnInit {
         data: [],
         label: 'Visitas',
         borderColor: '#1e3a8a',
-        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+        backgroundColor: 'rgba(30, 58, 138, 0.12)',
+        pointBackgroundColor: '#f59e0b',
+        pointBorderColor: '#fff',
+        pointRadius: 4,
         tension: 0.4,
         fill: true,
       },
@@ -120,14 +134,11 @@ export class DashboardComponent implements OnInit {
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      title: {
-        display: true,
-        text: 'Tráfico mensual',
-        font: { size: 14 },
-      },
+      title: { display: false },
     },
     scales: {
-      y: { beginAtZero: true },
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: '#eef2ff' }, ticks: { precision: 0 } },
     },
   };
 
@@ -146,30 +157,35 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  private applyDashboardData(data: {
-    visitasTotales: number;
-    vistasPagina: number;
-    paginasSesion: number;
-    rebotePorcentaje: number;
-    paginasMasVisitadas: { pagina: string; vistas: number }[];
-    visitasPorDia: { date: string; visits: number }[];
-    dispositivos: { device: string; percentage: number }[];
-    traficoMensual: { month: string; visits: number }[];
-    dataSource?: 'ga4' | 'mock' | 'error';
-  }): void {
+  pageBarWidth(vistas: number): string {
+    if (!this.maxPaginasVistas) return '0%';
+    return `${Math.max(10, (vistas / this.maxPaginasVistas) * 100)}%`;
+  }
+
+  rankShare(visitas: number): string {
+    const max = this.rankingGt[0]?.visitas ?? 0;
+    if (!max) return '0%';
+    return `${Math.max(8, (visitas / max) * 100)}%`;
+  }
+
+  private applyDashboardData(data: DashboardStats): void {
     this.dataSource = data.dataSource ?? 'mock';
     this.visitasTotales = data.visitasTotales;
     this.vistasPagina = data.vistasPagina;
     this.paginasSesion = data.paginasSesion;
     this.rebotePorcentaje = data.rebotePorcentaje;
     this.paginasMasVisitadas = data.paginasMasVisitadas;
+    this.maxPaginasVistas = Math.max(0, ...data.paginasMasVisitadas.map((p) => p.vistas));
+
+    const origen = data.visitasPorOrigen ?? [];
+    this.mapaMarcadores = markersFromOrigins(origen);
+    this.rankingGt = rankGuatemala(origen).slice(0, 8);
+    this.rankingExt = rankExtranjero(origen).slice(0, 4);
 
     this.barChartData = {
       ...this.barChartData,
       labels: data.visitasPorDia.map((d) =>
-        /^\d{8}$/.test(d.date)
-          ? this.formatDateLabel(d.date)
-          : d.date,
+        /^\d{8}$/.test(d.date) ? this.formatDateLabel(d.date) : d.date,
       ),
       datasets: [
         {

@@ -16,6 +16,7 @@ export interface AuthUser {
   email: string;
   role: 'vendedor' | 'administrador' | 'gerente' | 'editor' | 'cliente';
   permissions: string[];
+  profileImage?: string | null;
 }
 
 interface LoginResponse {

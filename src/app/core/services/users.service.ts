@@ -13,6 +13,7 @@ export interface ListUser {
   nombre: string;
   email: string;
   phone?: string;
+  profileImage?: string | null;
   rol: UserRole;
   ultimoAcceso: string | null;
   estado: UserStatus;
@@ -26,6 +27,7 @@ export interface CreateUserDto {
   phone?: string;
   role: string;
   status?: string;
+  profileImage?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -66,6 +68,7 @@ export class UsersService {
       phone: data.phone,
       role: data.role,
       status: data.status,
+      profileImage: data.profileImage,
     });
   }
 
@@ -78,7 +81,14 @@ export class UsersService {
 
   update(
     id: string,
-    data: { name?: string; email?: string; phone?: string; role?: string; status?: string }
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+      status?: string;
+      profileImage?: string | null;
+    }
   ): Observable<unknown> {
     return this.http.put(`${this.api}/${id}`, data);
   }

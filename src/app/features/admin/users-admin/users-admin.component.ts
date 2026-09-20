@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { NotificationService } from '../../../core/services/notification.service';
 import { clientFacingHttpMessage } from '../../../core/http/client-facing-error';
 import { UsersService } from '../../../core/services/users.service';
+import { StorageApiService } from '../../../core/services/storage-api.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 export type UserRole = 'vendedor' | 'administrador' | 'gerente' | 'editor';
 
@@ -32,6 +34,8 @@ export class UsersAdminComponent {
   showPassword = false;
   isEditingUser = false;
   editingUserId: string | null = null;
+  saving = false;
+  private selectedFile: File | null = null;
 
   roles: { value: UserRole; label: string }[] = [
     { value: 'vendedor', label: 'Vendedor' },
@@ -86,10 +90,12 @@ export class UsersAdminComponent {
     private router: Router,
     private notification: NotificationService,
     private usersService: UsersService,
+    private storageApi: StorageApiService,
+    private auth: AuthService,
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
   ) {
-    const state = this.router.getCurrentNavigation()?.extras?.state as {
+    const navState = this.router.getCurrentNavigation()?.extras?.state as {
       editingUser?: {
         id: string;
         nombre: string;
@@ -98,10 +104,16 @@ export class UsersAdminComponent {
         phone?: string;
         rol: UserRole;
         estado: 'activo' | 'inactivo';
+        profileImage?: string | null;
       };
     } | undefined;
-    if (state?.editingUser) {
-      const u = state.editingUser;
+    const histState =
+      typeof history !== 'undefined'
+        ? (history.state as typeof navState)
+        : undefined;
+    const editingUser = navState?.editingUser ?? histState?.editingUser;
+    if (editingUser) {
+      const u = editingUser;
       this.isEditingUser = true;
       this.editingUserId = u.id;
       this.fullName = u.nombre;
@@ -110,6 +122,7 @@ export class UsersAdminComponent {
       this.phone = this.parsePhoneForInput(u.phone);
       this.role = u.rol;
       this.status = u.estado;
+      this.profileImage = u.profileImage ?? null;
     }
   }
 
@@ -145,6 +158,7 @@ export class UsersAdminComponent {
       input.value = '';
       return;
     }
+    this.selectedFile = file;
     const reader = new FileReader();
     reader.onload = (e: ProgressEvent<FileReader>) => {
       const result = e.target?.result as string | undefined;
@@ -181,6 +195,7 @@ export class UsersAdminComponent {
   }
 
   save(): void {
+    if (this.saving) return;
     if (!this.fullName?.trim()) {
       this.notification.showMessage('El nombre completo es requerido.', 'error');
       return;
@@ -189,27 +204,7 @@ export class UsersAdminComponent {
       this.notification.showMessage('El usuario es requerido.', 'error');
       return;
     }
-    if (this.isEditingUser) {
-      this.usersService
-        .update(this.editingUserId!, {
-          name: this.fullName,
-          email: this.email?.trim() || undefined,
-          phone: this.phoneForApi || undefined,
-          role: this.role,
-          status: this.status,
-        })
-        .subscribe({
-          next: () => {
-            this.notification.showMessage('Usuario actualizado.', 'success');
-            this.router.navigate(['/admin/usuarios']);
-          },
-          error: (err) =>
-            this.notification.showMessage(
-              clientFacingHttpMessage(err, 'No se pudo actualizar el usuario.'),
-              'error'
-            ),
-        });
-    } else {
+    if (!this.isEditingUser) {
       if (!this.email?.trim()) {
         this.notification.showMessage('El correo es requerido.', 'error');
         return;
@@ -221,28 +216,92 @@ export class UsersAdminComponent {
         );
         return;
       }
+    }
+
+    if (this.selectedFile) {
+      this.saving = true;
+      this.storageApi.upload(this.selectedFile, 'avatars').subscribe({
+        next: (res) => {
+          this.selectedFile = null;
+          this.profileImage = res.url;
+          this.persistUser(res.url);
+        },
+        error: (err) => {
+          this.saving = false;
+          this.notification.showMessage(
+            clientFacingHttpMessage(err, 'No se pudo subir la imagen de perfil.'),
+            'error',
+          );
+        },
+      });
+      return;
+    }
+
+    this.persistUser();
+  }
+
+  private persistUser(uploadedUrl?: string): void {
+    this.saving = true;
+    const profileImage = uploadedUrl ?? undefined;
+
+    if (this.isEditingUser) {
       this.usersService
-        .create({
-          username: this.username.trim(),
-          email: this.email.trim(),
-          password: this.temporaryPassword,
-          name: this.fullName.trim(),
+        .update(this.editingUserId!, {
+          name: this.fullName,
+          email: this.email?.trim() || undefined,
           phone: this.phoneForApi || undefined,
           role: this.role,
           status: this.status,
+          ...(profileImage ? { profileImage } : {}),
         })
         .subscribe({
-          next: () => {
-            this.notification.showMessage('Usuario creado.', 'success');
-            this.router.navigate(['/admin/usuarios']);
-          },
-          error: (err) =>
+          next: () => this.afterSaved('Usuario actualizado.'),
+          error: (err) => {
+            this.saving = false;
             this.notification.showMessage(
-              clientFacingHttpMessage(err, 'No se pudo crear el usuario.'),
+              clientFacingHttpMessage(err, 'No se pudo actualizar el usuario.'),
               'error'
-            ),
+            );
+          },
         });
+      return;
     }
+
+    this.usersService
+      .create({
+        username: this.username.trim(),
+        email: this.email.trim(),
+        password: this.temporaryPassword,
+        name: this.fullName.trim(),
+        phone: this.phoneForApi || undefined,
+        role: this.role,
+        status: this.status,
+        ...(profileImage ? { profileImage } : {}),
+      })
+      .subscribe({
+        next: () => this.afterSaved('Usuario creado.'),
+        error: (err) => {
+          this.saving = false;
+          this.notification.showMessage(
+            clientFacingHttpMessage(err, 'No se pudo crear el usuario.'),
+            'error'
+          );
+        },
+      });
+  }
+
+  private afterSaved(message: string): void {
+    const finish = () => {
+      this.saving = false;
+      this.notification.showMessage(message, 'success');
+      this.router.navigate(['/admin/usuarios']);
+    };
+    const me = this.auth.currentUser();
+    if (this.isEditingUser && me?.id === this.editingUserId) {
+      this.auth.refreshMe().subscribe({ next: () => finish(), error: () => finish() });
+      return;
+    }
+    finish();
   }
 
   cancel(): void {

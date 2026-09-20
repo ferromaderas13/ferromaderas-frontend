@@ -126,6 +126,7 @@ export class UserListComponent implements OnInit {
           phone: user.phone,
           rol: user.rol,
           estado: user.estado,
+          profileImage: user.profileImage ?? null,
         },
       },
     });

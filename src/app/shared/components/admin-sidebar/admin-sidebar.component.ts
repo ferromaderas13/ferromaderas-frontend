@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -39,7 +39,15 @@ export class AdminSidebarComponent implements OnInit, OnDestroy {
   isMenuOpen = false;
   private lastScrollTop = 0;
 
+  private readonly fallbackAvatar = '/assets/images/persona.png';
+  private readonly avatarFailedUrl = signal<string | null>(null);
+
   userName = computed(() => this.auth.currentUser()?.name ?? 'Usuario');
+  avatarUrl = computed(() => {
+    const url = this.auth.currentUser()?.profileImage;
+    if (!url || this.avatarFailedUrl() === url) return this.fallbackAvatar;
+    return url;
+  });
   pendingQuotesCount = this.followUpAlerts.pendingCount;
   menuItems = computed(() => {
     const user = this.auth.currentUser();
@@ -81,6 +89,11 @@ export class AdminSidebarComponent implements OnInit, OnDestroy {
 
   closeMenu(): void {
     this.isMenuOpen = false;
+  }
+
+  onAvatarError(): void {
+    const url = this.auth.currentUser()?.profileImage;
+    if (url) this.avatarFailedUrl.set(url);
   }
 
   @HostListener('window:scroll')

@@ -17,7 +17,11 @@
   <div class="avatar-section">
     <p class="user-name">{{ userName() }}</p>
     <div class="user-avatar">
-      <img src="/assets/images/persona.png" alt="Usuario" />
+      <img
+        [src]="avatarUrl()"
+        alt="Usuario"
+        (error)="onAvatarError()"
+      />
       <span class="online-indicator"></span>
     </div>
   </div>

@@ -160,6 +160,76 @@
   }
 }
 
+.comercial-board {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.comercial-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.comercial-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  background: #1e3a8a;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    background: #1e40af;
+  }
+}
+
+.estado-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0 0 1.1rem;
+}
+
+.estado-pill {
+  min-width: 7.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+
+  strong {
+    display: block;
+    font-size: 1.15rem;
+    color: #1e3a8a;
+  }
+
+  span {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+}
+
+.chatbot-kpis {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 36rem;
+}
+
+.comercial-top {
+  margin-top: 0.35rem;
+}
+
 .web-stats-header {
   display: flex;
   flex-wrap: wrap;
@@ -672,6 +742,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .chatbot-kpis {
+    max-width: none;
+  }
+
   .insight-row {
     grid-template-columns: 1fr;
   }
@@ -718,6 +792,11 @@
   .kpi-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+
+  .estado-pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .kpi-value {

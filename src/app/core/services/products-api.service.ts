@@ -12,6 +12,22 @@ export interface BulkImportResult {
   errors: string[];
 }
 
+export interface ProductSyncStatus {
+  lastSync: {
+    fecha: string;
+    accion: string;
+    origen: string;
+    creados: number;
+    actualizados: number;
+    desactivados: number;
+    sinCambios: number;
+    totalItems: number;
+    errores: number;
+    mensaje?: string;
+  } | null;
+  lastError: { fecha: string; mensaje: string } | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProductsApiService {
   private readonly api = `${environment.apiUrl}/products`;
@@ -102,6 +118,10 @@ export class ProductsApiService {
       items,
       sync,
     });
+  }
+
+  getSyncStatus(): Observable<ProductSyncStatus> {
+    return this.http.get<ProductSyncStatus>(`${this.api}/sync-status`);
   }
 
   private mapToProduct(p: unknown): Product {

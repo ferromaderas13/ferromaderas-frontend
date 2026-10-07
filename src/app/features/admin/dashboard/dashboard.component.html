@@ -62,6 +62,111 @@
     </section>
   }
 
+  @if (canViewQuotes()) {
+    <section class="comercial-board">
+      <header class="comercial-header">
+        <div>
+          <p class="web-kicker">Tablero gerencial</p>
+          <h1 class="dashboard-title">Indicadores comerciales</h1>
+          <p class="web-lead">
+            Cotizaciones de los últimos 30 días, estados del pipeline y materiales más pedidos.
+            Los PDF por reporte están en Reportes.
+          </p>
+        </div>
+        <a routerLink="/admin/reportes" class="comercial-link">Ver reportes y PDF →</a>
+      </header>
+
+      @if (!comercialListo) {
+        <p class="alerts-loading">Cargando indicadores comerciales...</p>
+      } @else {
+        <div class="kpi-grid biz-grid">
+          <article class="kpi-card biz">
+            <p class="kpi-label">Cotizaciones</p>
+            <p class="kpi-value">{{ cotizaciones30 | number }}</p>
+            <p class="kpi-hint">Pedidos armados en el sistema</p>
+          </article>
+          <article class="kpi-card biz">
+            <p class="kpi-label">En negociación</p>
+            <p class="kpi-value">Q{{ montoPipeline | number:'1.0-0' }}</p>
+            <p class="kpi-hint">Nuevas, seguimiento y confirmadas</p>
+          </article>
+          <article class="kpi-card biz">
+            <p class="kpi-label">Cerrado</p>
+            <p class="kpi-value">Q{{ montoCerrado30 | number:'1.0-0' }}</p>
+            <p class="kpi-hint">Cotizaciones marcadas como cerradas</p>
+          </article>
+          <article class="kpi-card biz">
+            <p class="kpi-label">Ticket promedio</p>
+            <p class="kpi-value">Q{{ ticketPromedio | number:'1.0-0' }}</p>
+            <p class="kpi-hint">
+              @if (conversionPct !== null && conversionPct <= 100) {
+                {{ conversionPct }}% de las visitas pide cotización
+              } @else {
+                Valor medio por cotización
+              }
+            </p>
+          </article>
+        </div>
+
+        <div class="estado-pills">
+          @for (e of estados30; track e.key) {
+            <div class="estado-pill">
+              <strong>{{ e.n }}</strong>
+              <span>{{ e.label }}</span>
+            </div>
+          }
+        </div>
+
+        @if (canManageChatbot() && chatbotListo) {
+          <p class="block-label">Chatbot</p>
+          <div class="kpi-grid biz-grid chatbot-kpis">
+            <article class="kpi-card biz">
+              <p class="kpi-label">Conversaciones</p>
+              <p class="kpi-value">{{ chatbotConversaciones | number }}</p>
+              <p class="kpi-hint">Historial del asistente</p>
+            </article>
+            <article class="kpi-card biz">
+              <p class="kpi-label">Mensajes de clientes</p>
+              <p class="kpi-value">{{ chatbotMensajes | number }}</p>
+              <p class="kpi-hint">Preguntas hechas al chatbot</p>
+            </article>
+          </div>
+        }
+
+        <div class="chart-container comercial-top">
+          <h3 class="section-title">Qué están cotizando</h3>
+          <p class="section-hint">Materiales que más piden en las cotizaciones</p>
+          @if (topProductos.length === 0) {
+            <p class="map-empty" style="color:#64748b">Aún no hay suficientes líneas de cotización.</p>
+          } @else {
+            <div class="pages-table">
+              @for (p of topProductos; track p.codigo) {
+                <div class="page-row">
+                  <span class="page-name">{{ p.nombre }}</span>
+                  <span class="page-bar-wrap">
+                    <span class="page-bar biz-bar" [style.width.%]="p.porcentaje"></span>
+                  </span>
+                  <span class="page-n">{{ p.vecesCotizado }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (insights.length > 0) {
+    <div class="insight-row">
+      @for (ins of insights; track ins.kicker) {
+        <article class="insight-card">
+          <p class="insight-kicker">{{ ins.kicker }}</p>
+          <p class="insight-text">{{ ins.texto }}</p>
+        </article>
+      }
+    </div>
+  }
+
   <header class="web-stats-header">
     <div>
       <p class="web-kicker">Catálogo en línea</p>
@@ -79,14 +184,12 @@
   @if (dataSource === 'error') {
     <div class="data-source-banner mock">
       GA4 está configurado en el backend, pero no se pudieron leer los reportes (credenciales o permisos).
-      El sitio sí registra visitas con GTM. Los indicadores comerciales están en
-      <a routerLink="/admin/reportes">Reportes</a>.
+      El sitio sí registra visitas con GTM. Los indicadores comerciales de arriba no dependen de GA4.
     </div>
   } @else if (dataSource !== 'ga4') {
     <div class="data-source-banner mock">
       El sitio ya registra visitas con GTM. Para ver esos números aquí hace falta
-      GA4_PROPERTY_ID y GA4_SERVICE_ACCOUNT_JSON en Railway. Los indicadores comerciales del negocio están en
-      <a routerLink="/admin/reportes">Reportes</a>.
+      GA4_PROPERTY_ID y GA4_SERVICE_ACCOUNT_JSON en Railway. Los indicadores comerciales de arriba no dependen de GA4.
     </div>
   }
 
@@ -117,49 +220,6 @@
         <p class="kpi-hint">Entraron y no siguieron navegando</p>
       </article>
     </div>
-
-    @if (canViewQuotes() && comercialListo) {
-      <p class="block-label">Negocio · últimos 30 días</p>
-      <div class="kpi-grid biz-grid">
-        <article class="kpi-card biz">
-          <p class="kpi-label">Cotizaciones</p>
-          <p class="kpi-value">{{ cotizaciones30 | number }}</p>
-          <p class="kpi-hint">Pedidos armados en el sistema</p>
-        </article>
-        <article class="kpi-card biz">
-          <p class="kpi-label">En negociación</p>
-          <p class="kpi-value">Q{{ montoPipeline | number:'1.0-0' }}</p>
-          <p class="kpi-hint">Nuevas, seguimiento y confirmadas</p>
-        </article>
-        <article class="kpi-card biz">
-          <p class="kpi-label">Cerrado</p>
-          <p class="kpi-value">Q{{ montoCerrado30 | number:'1.0-0' }}</p>
-          <p class="kpi-hint">Cotizaciones marcadas como cerradas</p>
-        </article>
-        <article class="kpi-card biz">
-          <p class="kpi-label">Ticket promedio</p>
-          <p class="kpi-value">Q{{ ticketPromedio | number:'1.0-0' }}</p>
-          <p class="kpi-hint">
-            @if (conversionPct !== null && conversionPct <= 100) {
-              {{ conversionPct }}% de las visitas pide cotización
-            } @else {
-              Valor medio por cotización
-            }
-          </p>
-        </article>
-      </div>
-    }
-
-    @if (insights.length > 0) {
-      <div class="insight-row">
-        @for (ins of insights; track ins.kicker) {
-          <article class="insight-card">
-            <p class="insight-kicker">{{ ins.kicker }}</p>
-            <p class="insight-text">{{ ins.texto }}</p>
-          </article>
-        }
-      </div>
-    }
 
     <section class="map-panel">
       <div class="map-canvas">
@@ -253,27 +313,6 @@
 
     <div class="chart-row">
       <div class="chart-container">
-        <h3 class="section-title">Qué están cotizando</h3>
-        <p class="section-hint">Materiales que más piden en las cotizaciones ·
-          <a routerLink="/admin/reportes">Ver reportes</a>
-        </p>
-        @if (topProductos.length === 0) {
-          <p class="map-empty" style="color:#64748b">Aún no hay suficientes líneas de cotización.</p>
-        } @else {
-          <div class="pages-table">
-            @for (p of topProductos; track p.codigo) {
-              <div class="page-row">
-                <span class="page-name">{{ p.nombre }}</span>
-                <span class="page-bar-wrap">
-                  <span class="page-bar biz-bar" [style.width.%]="p.porcentaje"></span>
-                </span>
-                <span class="page-n">{{ p.vecesCotizado }}</span>
-              </div>
-            }
-          </div>
-        }
-      </div>
-      <div class="chart-container chart-half">
         <h3 class="section-title">Desde qué aparato</h3>
         <p class="section-hint">
           @if (celularPct >= 45) {

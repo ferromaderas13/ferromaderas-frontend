@@ -15,6 +15,10 @@ import {
   QuotesApiService,
 } from '../../../core/services/quotes-api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import {
+  ChatbotAdminService,
+  ChatbotMetrics,
+} from '../../../core/services/chatbot-admin.service';
 import { catchError, forkJoin, of } from 'rxjs';
 import {
   MAP_H,
@@ -68,12 +72,18 @@ export class DashboardComponent implements OnInit {
     [];
   comercialListo = false;
   insights: { kicker: string; texto: string }[] = [];
+  estados30: { key: string; label: string; n: number }[] = [];
+  chatbotListo = false;
+  chatbotConversaciones = 0;
+  chatbotMensajes = 0;
 
   private readonly followUpAlerts = inject(FollowUpAlertsService);
   private readonly auth = inject(AuthService);
   private readonly quotesApi = inject(QuotesApiService);
+  private readonly chatbotAdmin = inject(ChatbotAdminService);
 
   readonly canViewQuotes = () => this.auth.hasPermission('view_quotes');
+  readonly canManageChatbot = () => this.auth.hasPermission('manage_chatbot');
   readonly alertsLoading = this.followUpAlerts.loading;
   readonly alertsData = this.followUpAlerts.data;
 
@@ -255,13 +265,26 @@ export class DashboardComponent implements OnInit {
       productos: this.quotesApi
         .getTopQuotedProducts()
         .pipe(catchError(() => of([]))),
-    }).subscribe(({ quotes, productos }) => {
+      chatbot: this.canManageChatbot()
+        ? this.chatbotAdmin.getMetrics().pipe(catchError(() => of(null as ChatbotMetrics | null)))
+        : of(null as ChatbotMetrics | null),
+    }).subscribe(({ quotes, productos, chatbot }) => {
       const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
       const recientes = quotes.filter((q) => {
         const t = new Date(q.createdAt).getTime();
         return !Number.isNaN(t) && t >= since;
       });
       this.cotizaciones30 = recientes.length;
+
+      const countEstado = (estado: Quote['estado']) =>
+        recientes.filter((q) => q.estado === estado).length;
+      this.estados30 = [
+        { key: 'nueva', label: 'Nuevas', n: countEstado('nueva') },
+        { key: 'en_seguimiento', label: 'En seguimiento', n: countEstado('en_seguimiento') },
+        { key: 'confirmada', label: 'Confirmadas', n: countEstado('confirmada') },
+        { key: 'cerrada', label: 'Cerradas', n: countEstado('cerrada') },
+        { key: 'cancelada', label: 'Canceladas', n: countEstado('cancelada') },
+      ];
 
       const abiertas = recientes.filter((q) =>
         q.estado === 'nueva' || q.estado === 'en_seguimiento' || q.estado === 'confirmada',
@@ -275,6 +298,13 @@ export class DashboardComponent implements OnInit {
           ? Math.round(recientes.reduce((sum, q) => sum + money(q), 0) / recientes.length)
           : 0;
       this.topProductos = productos.slice(0, 5);
+
+      if (chatbot) {
+        this.chatbotConversaciones = chatbot.totalConversations;
+        this.chatbotMensajes = chatbot.totalUserMessages;
+        this.chatbotListo = true;
+      }
+
       this.comercialListo = true;
       this.refreshInsights();
     });

@@ -7,6 +7,10 @@ import { forkJoin, of, catchError } from 'rxjs';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Product } from '../../../core/models/product.model';
+import {
+  ProductsApiService,
+  ProductSyncStatus,
+} from '../../../core/services/products-api.service';
 
 @Component({
   selector: 'app-products-admin',
@@ -42,13 +46,17 @@ export class ProductsAdminComponent implements OnInit {
   bulkProgressPercent = 0;
   private bulkProgressInterval: ReturnType<typeof setInterval> | null = null;
 
+  syncStatus: ProductSyncStatus | null = null;
+
   constructor(
     private catalogService: CatalogService,
     private router: Router,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private productsApi: ProductsApiService,
   ) {}
 
   ngOnInit(): void {
+    this.loadSyncStatus();
     forkJoin({
       products: this.catalogService.loadProducts().pipe(
         catchError(() => {
@@ -66,6 +74,35 @@ export class ProductsAdminComponent implements OnInit {
         this.dataVersion++;
       },
     });
+  }
+
+  loadSyncStatus(): void {
+    this.productsApi.getSyncStatus().pipe(catchError(() => of(null))).subscribe((status) => {
+      this.syncStatus = status;
+    });
+  }
+
+  get syncErrorIsLatest(): boolean {
+    const err = this.syncStatus?.lastError;
+    const ok = this.syncStatus?.lastSync;
+    if (!err) return false;
+    if (!ok) return true;
+    return new Date(err.fecha).getTime() >= new Date(ok.fecha).getTime();
+  }
+
+  formatSyncFecha(iso: string): string {
+    try {
+      return new Date(iso).toLocaleString('es-GT', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      });
+    } catch {
+      return iso;
+    }
+  }
+
+  origenSyncLabel(origen: string): string {
+    return origen === 'admin' ? 'carga masiva del admin' : 'sincronización Di-Chara';
   }
 
   loadProducts(): void {
@@ -423,6 +460,7 @@ export class ProductsAdminComponent implements OnInit {
           this.bulkProgressPercent = 100;
           this.stopBulkProgressSimulation();
           this.loadProducts();
+          this.loadSyncStatus();
           this.closeBulkImport();
           let msg = `Se crearon ${result.created} producto(s) pendientes de configurar.`;
           if (result.updated) msg += ` Se actualizó existencia de ${result.updated} producto(s).`;

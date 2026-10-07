@@ -2,6 +2,33 @@
   <div class="list-section">
     <h2 class="list-title">Listado de productos</h2>
 
+    @if (syncStatus) {
+      <div class="sync-banner" [class.sync-fail]="syncErrorIsLatest">
+        @if (syncStatus.lastSync; as last) {
+          <p>
+            <strong>Última sincronización:</strong>
+            {{ formatSyncFecha(last.fecha) }}
+            · {{ origenSyncLabel(last.origen) }}
+            @if (last.accion === 'error') {
+              · falló{{ last.mensaje ? ': ' + last.mensaje : '' }}
+            } @else {
+              · {{ last.creados }} nuevos, {{ last.actualizados }} actualizados
+              @if (last.desactivados > 0) {
+                , {{ last.desactivados }} desactivados
+              }
+            }
+          </p>
+        } @else {
+          <p>Aún no hay sincronizaciones Di-Chara registradas.</p>
+        }
+        @if (syncErrorIsLatest && syncStatus.lastError; as err) {
+          <p class="sync-error">
+            Último fallo del .exe: {{ formatSyncFecha(err.fecha) }} — {{ err.mensaje }}
+          </p>
+        }
+      </div>
+    }
+
     <div class="view-tabs">
       <button
         type="button"
